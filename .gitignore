@@ -29,3 +29,5 @@ results_*
 log.txt
 
 *__pycache__*
+.Rproj.user
+*.Rproj
