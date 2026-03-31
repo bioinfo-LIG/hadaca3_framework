@@ -143,7 +143,6 @@ workflow {
     pp_ref_path = []
     CONFIG['pre_proc'].each { pp, ppv ->
         // if(!ppv.not_intercompatible){
-
             params.refomics.each { omic ->
                 if (ppv['omic'].contains(omic) || ppv['omic'].contains('ANY')){
                     pp_ref_path.add(tuple(
@@ -304,10 +303,21 @@ workflow {
 
     // out_fs.view{v -> v[0].output}
 
+
+// #######################################################
+// ######################### DECOVOLUTION STEPS ##########
+// #######################################################
+
 // ################## Generate combinaison for the RNA unit 
 
     deco_path =  []
-    CONFIG.deconvolution.each {de,dev -> deco_path.add( [ [de_fun : de]  , file(dev.path)])}
+    CONFIG.deconvolution.each {de,dev -> 
+    def de_omic = dev.getOrDefault('omic','ANY')
+        if(de_omic.contains("RNA") || de_omic.contains('ANY'))
+        {
+         deco_path.add( [ [de_fun : de]  , file(dev.path)])
+        }
+    }
 
     de_channel = Channel.fromList(deco_path)
 
@@ -384,7 +394,14 @@ workflow {
     fs_MET =out_fs.filter{meta,a -> meta.omic=='MET'  }
 
     deco_path_met =  []
-    CONFIG.deconvolution.each {de,dev -> deco_path_met.add( [ [de_fun : de]  , file(dev.path)])}
+    CONFIG.deconvolution.each {de,dev -> 
+        def de_omic = dev.getOrDefault('omic','ANY')
+        if(de_omic.contains("MET") || de_omic.contains('ANY'))
+        {
+        deco_path_met.add( [ [de_fun : de]  , file(dev.path)])
+        }
+    }
+    // CONFIG.deconvolution.each {de,dev -> deco_path_met.add( [ [de_fun : de]  , file(dev.path)])}
 
     de_channel_met = Channel.fromList(deco_path_met)
 
