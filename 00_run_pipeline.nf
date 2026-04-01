@@ -635,8 +635,17 @@ workflow {
 
 
     ei_decon_path =  []
-    CONFIG.deconvolution.each {de,dev -> ei_decon_path.add( [ [de_fun : de]  , file(dev.path)])}
+    // CONFIG.deconvolution.each {de,dev -> ei_decon_path.add( [ [de_fun : de]  , file(dev.path)])}
     
+    CONFIG.deconvolution.each {de,dev -> 
+        def de_omic = dev.getOrDefault('omic','ANY')
+        if(de_omic.contains('ANY'))
+        {
+            ei_decon_path.add( [ [de_fun : de]  , file(dev.path)])
+        }
+    }
+
+
     de_channel_EI = 
     Channel.fromList(ei_decon_path)
     .combine(ei_out)
