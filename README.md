@@ -201,6 +201,9 @@ Run with minimal setup to debug fonction.
 nextflow run 00_run_pipeline.nf -resume --setup_folder benchmark/Local_test_setup/
 ```
 
+nextflow run 00_run_pipeline.nf  -with-report -resume --setup_folder benchmark/Local_test_setup/
+
+
 ### Continuous Integration description 
 There are two types of contiuous integration (CI). 
 - One partial which is executed every comit and that will continue tasks not completed yet (it run the pipeline with the command `-resume`).
@@ -290,6 +293,8 @@ normalize :
 
 Beware, functions that handle several omics such as [ANY] or [mixRNA,RNA,scRNA] have to handle each of the omic individually. 
 
+Additionnaly, be warn that decovolution function default omic is ANY. However decovolution can accept RNA or MET omic. If anything a decovolution function has omic defined as RNA or MET, this function will **NOT** be included in the early integreation pipeline, leave omic empty or with the ANY omic to be included in the early_integration.  
+
 Indeed, each fonction of each block have the same function header that looks like:
 ```
 program_block_PP <- function(data,path_og_dataset='',omic='') {
@@ -322,6 +327,7 @@ function2 :
     omic_need : [scRNA]
     omic : [mixRNA,RNA,scRNA]
 ```
+
 The field  *dependency* contains a list of files that can be read during the execution of the function. The path in the field dependency is a relative path, whereas the path in the function code will only be the file name. 
 For instance dependency : [preprocessing/attachement/teamHtfrna_network_modules.rds,preprocessing/attachement/teamHtfrna_ref_modules.rds] in the yml means that the file "teamHtfrna_network_modules.rds" and "teamHtfrna_ref_modules.rds" are readable in the function with a code like: `readRDS("teamHtfrna_ref_modules.rds")`.
 
