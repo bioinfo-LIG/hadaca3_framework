@@ -70,6 +70,8 @@ mamba install -y  -c bioconda -c conda-forge -c r snakemake python r-base r-rmar
 
 pip install uniport
 
+
+Rscript -e 'install.packages("FARDEEP", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")'
 Rscript -e 'remotes::install_github("immunogenomics/presto")'
 Rscript -e 'remotes::install_github("Danko-Lab/BayesPrism/BayesPrism")'
 Rscript -e 'remotes::install_github("humengying0907/InstaPrism")'
