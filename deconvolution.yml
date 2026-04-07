@@ -38,12 +38,12 @@ RLRpoisson :  #must be a unique ID
 InstaPrism :  #must be a unique ID
   path: deconvolution/InstaPrism.R
   short_name: InstaPrism
-  omic:  [RNA,MET]
+  omic:  [RNA]
   
 fardeep :  #must be a unique ID
   path: deconvolution/fardeep.R
   short_name: FARDEEP
-  omic:  [RNA,MET]
+  omic:  [RNA]
 
 # cibersort :  #must be a unique ID
 #   path: deconvolution/cibersort.R
