@@ -50,13 +50,13 @@ fardeep :  #must be a unique ID
 #   short_name: CIBERSORT
 
 
-DWLS :  #must be a unique ID
-  path: deconvolution/DWLS.R
-  short_name: DWLS
-  omic: [RNA]
+# DWLS :  #must be a unique ID
+#   path: deconvolution/DWLS.R
+#   short_name: DWLS
+#   omic: [RNA]
   
 
-MuSiC :  #must be a unique ID
-  path: deconvolution/MuSiC.R
-  short_name: MuSiC
-  omic: [RNA]
+# MuSiC :  #must be a unique ID
+#   path: deconvolution/MuSiC.R
+#   short_name: MuSiC
+#   omic: [RNA]
