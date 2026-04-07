@@ -36,11 +36,10 @@ jobs:
           git fetch --all
 
           # Sys.setenv(GITHUB_PAT = "${{ secrets.PAT_CI }}")
-
           git reset --hard ${{ github.sha }}
             awk '/```{Automatic CI-conda}/{f=1; next} f && /```/{f=0; exit} f' README.md | while read -r line; do
             [[ "$line" =~ ^# ]] && continue
-            # [ -z "$line" ] || [[ "$line" =~ conda\ create ]] && continue
+            [ -z "$line" ] || [[ "$line" =~ conda\ create ]] && continue
             echo "$line"
             eval "$line"
           done
@@ -191,7 +190,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         if: success() || failure() 
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
