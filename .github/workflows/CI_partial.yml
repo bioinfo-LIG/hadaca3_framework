@@ -19,6 +19,7 @@ jobs:
       REPO_DIR: "/home/github-runner/projects/hadaca3_framework/"  # Adjust this to your repo path
       SNK_CORES: "2"
       MEM_MB: "32000"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout code
