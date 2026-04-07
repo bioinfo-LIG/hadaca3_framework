@@ -5,6 +5,7 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
   library(BayesPrism)
   library(pbapply)
   library(dplyr)
+  library(NMF)
   
   idx_feat = intersect(rownames(uni_data$mix), rownames(uni_data$ref))
   uni_data$mix = uni_data$mix[idx_feat,]
