@@ -40,7 +40,7 @@ jobs:
           git reset --hard ${{ github.sha }}
             awk '/```{Automatic CI-conda}/{f=1; next} f && /```/{f=0; exit} f' README.md | while read -r line; do
             [[ "$line" =~ ^# ]] && continue
-            [ -z "$line" ] || [[ "$line" =~ conda\ create ]] && continue
+            # [ -z "$line" ] || [[ "$line" =~ conda\ create ]] && continue
             echo "$line"
             eval "$line"
           done
