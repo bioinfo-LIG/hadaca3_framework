@@ -76,7 +76,7 @@ Rscript -e 'install.packages("FARDEEP", repos = "http://cran.us.r-project.org", 
 Rscript -e 'remotes::install_github("immunogenomics/presto")'
 Rscript -e 'remotes::install_github("Danko-Lab/BayesPrism/BayesPrism")'
 Rscript -e 'remotes::install_github("humengying0907/InstaPrism")'
-
+Rscript -e 'remotes::install_github("xuranw/MuSiC")'
 ```
 
 
