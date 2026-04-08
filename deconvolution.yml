@@ -35,12 +35,12 @@ RLRpoisson :  #must be a unique ID
 #   short_name: RLRn
 
 
-InstaPrism :  #must be a unique ID
+InstaPrism :  #working with RNA
   path: deconvolution/InstaPrism.R
   short_name: InstaPrism
   omic:  [RNA]
   
-fardeep :  #must be a unique ID
+fardeep :  #working with RNA
   path: deconvolution/fardeep.R
   short_name: FARDEEP
   omic:  [RNA]
@@ -56,7 +56,7 @@ fardeep :  #must be a unique ID
 #   omic: [RNA]
   
 
-# MuSiC :  #must be a unique ID
-#   path: deconvolution/MuSiC.R
-#   short_name: MuSiC
-#   omic: [RNA]
+MuSiC :  #must be a unique ID
+  path: deconvolution/MuSiC.R
+  short_name: MuSiC
+  omic: [RNA]
