@@ -45,15 +45,17 @@ fardeep :  #working with RNA
   short_name: FARDEEP
   omic:  [RNA]
 
-# cibersort :  #must be a unique ID
-#   path: deconvolution/cibersort.R
-#   short_name: CIBERSORT
+cibersort :  #must be a unique ID
+  path: deconvolution/cibersort.R
+  short_name: CIBERSORT
+  omic: [RNA]
 
 
-# DWLS :  #must be a unique ID
-#   path: deconvolution/DWLS.R
-#   short_name: DWLS
-#   omic: [RNA]
+
+DWLS :  #must be a unique ID
+  path: deconvolution/DWLS.R
+  short_name: DWLS
+  omic: [RNA]
   
 
 MuSiC :  #must be a unique ID
