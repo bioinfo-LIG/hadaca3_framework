@@ -6,8 +6,16 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
   
   bulk.mtx = uni_data$mix 
   
-  metadata = uni_data$ref_scRNA[[1]]$metadata
-  counts = uni_data$ref_scRNA[[1]]$counts
+
+  if("ref_sc_peng" %in% names(uni_data$ref_scRNA)){
+    metadata = uni_data$ref_scRNA$ref_sc_peng$metadata
+    counts = uni_data$ref_scRNA$ref_sc_peng$counts
+  }
+  else{
+    metadata = uni_data$ref_scRNA[[1]]$metadata
+    counts = uni_data$ref_scRNA[[1]]$counts
+
+  }
 
   sce_object <- SingleCellExperiment(
     assays = list(counts = counts),

@@ -424,10 +424,21 @@ buildSignatureMatrixMAST<-function(scdata,id,path,diff.cutoff=0.5,pval.cutoff=0.
 program_block_DE <- function(uni_data,path_og_dataset='') {
 
   #data
-  dataSC = uni_data$ref_scRNA[[1]]counts 
+
+
+  if("ref_sc_peng" %in% names(uni_data$ref_scRNA)){
+    labels = uni_data$ref_scRNA$ref_sc_peng$metadata$cell_type
+    dataSC = uni_data$ref_scRNA$ref_sc_peng$counts
+  }
+  else{
+
+    dataSC = uni_data$ref_scRNA[[1]]counts 
+    labels = uni_data$ref_scRNA[[1]]metadata$cell_type # labels of single cells
+
+  }
+
 
   dataBulk = uni_data$mix 
-  labels = uni_data$ref_scRNA[[1]]metadata$cell_type # labels of single cells
   
   #load single cell ref and build signature
     Signature<-buildSignatureMatrixMAST(scdata=dataSC,id=labels,path="./",diff.cutoff=0.5,pval.cutoff=0.01) # write and save output commented in function  DEAnalysisMAST
