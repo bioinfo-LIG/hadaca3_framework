@@ -2,22 +2,22 @@
 #install these packages if necessary...
 
 if (!require("quadprog")) {
-  install.packages("quadprog", dependencies = TRUE, repos="http://cran.r-project.org")
+  install.packages("quadprog", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 }
 if (!require("reshape")) {
-  install.packages("reshape", dependencies = TRUE, repos="http://cran.r-project.org")
+  install.packages("reshape", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 }
 if (!require("e1071")) {
-  install.packages("e1071", dependencies = TRUE, repos="http://cran.r-project.org")
+  install.packages("e1071", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 }
 if (!require("Seurat")) {
-  install.packages("Seurat", dependencies = TRUE, repos="http://cran.r-project.org")
+  install.packages("Seurat", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 }
 if (!require("ROCR")) {
-  install.packages("ROCR", dependencies = TRUE, repos="http://cran.r-project.org")
+  install.packages("ROCR", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 }
 if (!require("varhandle")) {
-  install.packages("varhandle", dependencies = TRUE, INSTALL_opts = '--no-lock')
+  install.packages("varhandle", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 }
 
 
