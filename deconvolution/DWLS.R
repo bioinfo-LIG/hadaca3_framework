@@ -1,40 +1,40 @@
-#Deconvolution Functions
-#install these packages if necessary...
+# #Deconvolution Functions
+# #install these packages if necessary...
 
-if (!require("quadprog")) {
-  install.packages("quadprog", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
-}
-if (!require("reshape")) {
-  install.packages("reshape", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
-}
-if (!require("e1071")) {
-  install.packages("e1071", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
-}
-if (!require("Seurat")) {
-  install.packages("Seurat", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
-}
-if (!require("ROCR")) {
-  install.packages("ROCR", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
-}
-if (!require("varhandle")) {
-  install.packages("varhandle", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
-}
-
-
-
-
-
-# if (!require("MAST")) {
-#   source("https://bioconductor.org/biocLite.R")
-#   biocLite("MAST")
+# if (!require("quadprog")) {
+#   install.packages("quadprog", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
+# }
+# if (!require("reshape")) {
+#   install.packages("reshape", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
+# }
+# if (!require("e1071")) {
+#   install.packages("e1071", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
+# }
+# if (!require("Seurat")) {
+#   install.packages("Seurat", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
+# }
+# if (!require("ROCR")) {
+#   install.packages("ROCR", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
+# }
+# if (!require("varhandle")) {
+#   install.packages("varhandle", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")
 # }
 
-if (!require("MAST")) {
-  if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
 
-  BiocManager::install("MAST")
-}
+
+
+
+# # if (!require("MAST")) {
+# #   source("https://bioconductor.org/biocLite.R")
+# #   biocLite("MAST")
+# # }
+
+# if (!require("MAST")) {
+#   if (!require("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+
+#   BiocManager::install("MAST")
+# }
 
 
 #load packages
