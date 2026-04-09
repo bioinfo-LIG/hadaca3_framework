@@ -432,8 +432,8 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
   }
   else{
 
-    dataSC = uni_data$ref_scRNA[[1]]counts 
-    labels = uni_data$ref_scRNA[[1]]metadata$cell_type # labels of single cells
+    dataSC = uni_data$ref_scRNA[[1]]$counts 
+    labels = uni_data$ref_scRNA[[1]]$metadata$cell_type # labels of single cells
 
   }
 
