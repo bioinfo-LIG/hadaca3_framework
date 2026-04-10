@@ -523,6 +523,7 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
       # not filtering results;
       Signature<-buildSignatureMatrixMAST(scdata=dataSC,id=labels,path="./",
     diff.cutoff = 0,    # accept any fold-change 
+    pval.cutoff = 1  )   # accept any p-value
   #run supervised deconvolution
   uni_pred <- sapply(seq_len(ncol(dataBulk)), function(i) {
     sample_col <- dataBulk[, i]
