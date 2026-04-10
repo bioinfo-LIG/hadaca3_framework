@@ -25,7 +25,10 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
     input.type = "GEP",
     cell.state.labels = state_labels,
     cell.type.labels = type_labels,
-    key = "tumor") # create prism obj
+    key = "tumor",
+    outlier.cut = 1,      # flags nothing as outlier (top/bottom 100%)
+    outlier.fraction = 1) # even if flagged, 100% of cells would need to be outliers
+
   
   
   

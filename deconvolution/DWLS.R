@@ -429,8 +429,7 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
   if("ref_sc_peng" %in% names(uni_data$ref_scRNA)){
     labels = uni_data$ref_scRNA$ref_sc_peng$metadata$cell_type
     dataSC = uni_data$ref_scRNA$ref_sc_peng$counts
-  }
-  else{
+  }  else{
 
     dataSC = uni_data$ref_scRNA[[1]]$counts 
     labels = uni_data$ref_scRNA[[1]]$metadata$cell_type # labels of single cells
@@ -441,8 +440,10 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
   dataBulk = uni_data$mix 
   
   #load single cell ref and build signature
-    Signature<-buildSignatureMatrixMAST(scdata=dataSC,id=labels,path="./",diff.cutoff=0.5,pval.cutoff=0.01) # write and save output commented in function  DEAnalysisMAST
-  
+    # Signature<-buildSignatureMatrixMAST(scdata=dataSC,id=labels,path="./",diff.cutoff=0.5,pval.cutoff=0.01) # write and save output commented in function  DEAnalysisMAST
+      # not filtering results;
+      Signature<-buildSignatureMatrixMAST(scdata=dataSC,id=labels,path="./",
+    diff.cutoff = 0,    # accept any fold-change 
   #run supervised deconvolution
   uni_pred <- sapply(seq_len(ncol(dataBulk)), function(i) {
     sample_col <- dataBulk[, i]
