@@ -388,7 +388,8 @@ DEAnalysisMAST <- function(scdata, id, path, diff.cutoff=0) {
       vbeta.fa <-FromFlatDF(vbeta, idvars=c("Subject.ID"),
                             primerid='Gene', measurement='Et', ncells='Number.of.Cells',
                             geneid="Gene",  cellvars=c('Number.of.Cells', 'Population'),
-                            phenovars=c('Population'), id='vbeta all')
+                            phenovars=c('Population'), id='vbeta all',
+                            check_sanity=FALSE)
       vbeta.1 <- subset(vbeta.fa,Number.of.Cells==1)
       head(colData(vbeta.1))
       zlm.output <- zlm(~ Population, vbeta.1, method='bayesglm', ebayes=TRUE)
