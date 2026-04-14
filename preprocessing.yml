@@ -8,17 +8,25 @@ LogNorm : #is working
   short_name: LogN
   omic: [ANY]
 
-##### working
-# CPM : # Sequence depth normalization for RNA
-#   path: preprocessing/CPM.R
-#   short_name: cpm
-#   omic: [mixRNA,RNA,scRNA]
-
+#### best pp function : 
 Scale :  #scale with sweep function  #must be a unique ID
   path: preprocessing/scale.R
   short_name: scal
   omic: [ANY]
 
+sccluster : # seurat created object
+  path: preprocessing/sc_cluster.R
+  short_name: sccl
+  create: [ref_cluster]
+  omic: [scRNA]
+  
+
+
+##### working
+# CPM : # Sequence depth normalization for RNA
+#   path: preprocessing/CPM.R
+#   short_name: cpm
+#   omic: [mixRNA,RNA,scRNA]
 
 # scScale :  #must be a unique ID
 #   path: preprocessing/sc_scale.R
@@ -31,12 +39,6 @@ Scale :  #scale with sweep function  #must be a unique ID
 #   create: [ref_concat]
 #   omic: [scRNA]
 
-sccluster : # seurat created object
-  path: preprocessing/sc_cluster.R
-  short_name: sccl
-  create: [ref_cluster]
-  omic: [scRNA]
-  
 # scbinarypseudobulklog : # maybe move to intermediate or early integration because it should change both scRNA and RNA (rescale)
 #   path: preprocessing/sc_binarypseudobulk_log.R
 #   short_name: scbpl
