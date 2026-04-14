@@ -186,6 +186,7 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
     
     #iterate through samples
     while(itor <= samples){
+      print(itor)
       #if (round(itor/30)==itor/30) {print(paste0("CIBERSORT progress ",round(100*itor/samples),"%"))}
       y <- Y[,itor]
       
@@ -197,6 +198,7 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
       
       #get results
       w <- result$w
+
       mix_r <- result$mix_r
       mix_rmse <- result$mix_rmse
       if(absolute && abs_method == 'sig.score') {
@@ -207,18 +209,31 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
       if(perm > 0) {pval <- 1 - (which.min(abs(nulldist - mix_r)) / length(nulldist))}
       
       #print output
-      out <- c(colnames(Y)[itor],w,pval,mix_r,mix_rmse)
+      out <- c(colnames(Y)[itor], as.numeric(w), pval, mix_r, mix_rmse)
+      # out <- c(colnames(Y)[itor],w,pval,mix_r,mix_rmse)
       if(absolute) out <- c(out, sum(w))
-      if(itor == 1) {output <- out}
-      else {output <- rbind(output, out)}
+      # if(itor == 1) {output <- out}      else {output <- rbind(output, out)}
+      if(itor == 1) {output <- matrix(out, nrow=1)} else {output <- rbind(output, matrix(out, nrow=1))}
+
       itor <- itor + 1
     }
+
+    
     
     #return matrix object containing all results
     obj <- rbind(header,output)
+
+
+    cat("ncol(Y):", ncol(Y), "\n")
+    cat("length(header):", length(header), "\n")
+    cat("dim(output):", dim(output), "\n")
+    cat("length(output):", length(output), "\n")
+    cat("dim(obj after rbind):", dim(obj), "\n")
+
     obj <- obj[,-1]
     obj <- obj[-1,]
-    obj <- matrix(as.numeric(unlist(obj)),nrow=nrow(obj))
+    obj <- matrix(as.numeric(unlist(obj)), nrow = ncol(Y))
+    # obj <- matrix(as.numeric(unlist(obj)),nrow=nrow(obj))
     rownames(obj) <- colnames(Y)
     if(!absolute){colnames(obj) <- c(colnames(X),"P-value","Correlation","RMSE")}
     else{colnames(obj) <- c(colnames(X),"P-value","Correlation","RMSE",paste('Absolute score (',abs_method,')',sep=""))}
@@ -230,19 +245,53 @@ program_block_DE <- function(uni_data,path_og_dataset='') {
   uni_data$ref = uni_data$ref[idx_feat,]
   uni_pred = matrix(NA, nrow = ncol(uni_data$ref), ncol = ncol(uni_data$mix))
   
-  for (bulk_i in seq(1,ncol(uni_data$mix),2)) { # two by two because it only 
+  # for (bulk_i in seq(1,ncol(uni_data$mix),2)) { # two by two because it only 
     
-    if (bulk_i != ncol(uni_data$mix)) {
-      bulk_i = c(bulk_i, bulk_i+1)
-    }
+  #   if (bulk_i != ncol(uni_data$mix)) {
+  #     bulk_i = c(bulk_i, bulk_i+1)
+  #   }
     
-    beta_cibersort_pdac[,bulk_i] = t(CIBERSORT(
-      ref_profiles = uni_data$ref, 
-      dat = uni_data$mix
-    )[,1:9])
+  #   beta_cibersort_pdac[,bulk_i] = t(CIBERSORT(
+  #     ref_profiles = uni_data$ref, 
+  #     dat = uni_data$mix
+  #   )[,1:9])
+  # }
+  # for (bulk_i in seq(1, ncol(uni_data$mix), 2)) {
+  
+  # # Build index for this batch (pairs of columns)
+  # if (bulk_i + 1 <= ncol(uni_data$mix)) {
+  #   idx <- c(bulk_i, bulk_i + 1)
+  # } else {
+  #   idx <- bulk_i
+  # }
+  
+  # # Pass only the current subset of mixture columns
+  # mix_subset <- uni_data$mix[, idx, drop = FALSE]
+  
+  # result <- CIBERSORT(
+  #   ref_profiles = uni_data$ref,
+  #   dat = mix_subset
+  #   # dat = uni_data$mix
+  # )
+  
+  # # result rows = samples, cols = cell types (1:ncol(uni_data$ref)) + stats
+  # # uni_pred rows = cell types, cols = bulk samples → transpose
+  # uni_pred[, idx] <- t(result[, 1:nrow(uni_pred), drop = FALSE])
+  # }
+
+
+  if(is.null(colnames(uni_data$mix))) {
+    colnames(uni_data$mix) <- paste0("sample_", seq_len(ncol(uni_data$mix)))
   }
   
+  result <- CIBERSORT(
+    ref_profiles = uni_data$ref,
+    # dat = mix_subset
+    dat = uni_data$mix
+  )
   
-  return(uni_pred) 
+  n_celltypes <- ncol(uni_data$ref)
+  
+  return(t(result[, 1:n_celltypes]))
 }
 
