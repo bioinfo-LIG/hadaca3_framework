@@ -34,11 +34,10 @@ RLRpoisson :  #must be a unique ID
 #   path: deconvolution/RLR_nnls.R
 #   short_name: RLRn
 
-
 InstaPrism :  #working with RNA
   path: deconvolution/InstaPrism.R
   short_name: InstaPrism
-  omic:  [RNA]
+  omic:  [RNA,MET]
   
 fardeep :  #working with RNA
   path: deconvolution/fardeep.R
@@ -49,7 +48,6 @@ cibersort :  #must be a unique ID
   path: deconvolution/cibersort.R
   short_name: CIBERSORT
   omic: [RNA]
-
 
 
 DWLS :  #must be a unique ID
