@@ -4,25 +4,25 @@
 #   path: early_integration/MOFA.R 
 #   short_name: MOFA
 
-omicade4bulk:
-  path: early_integration/omicade4_bulk.R 
-  short_name: Ocablk
-  language: R
-
-# concatscale:
-#   path: early_integration/concat_scale.R 
-#   short_name: Consc
+# omicade4bulk:
+#   path: early_integration/omicade4_bulk.R 
+#   short_name: Ocablk
 #   language: R
 
-# concatnoscale:
-#   path: early_integration/concat_noscale.R 
-#   short_name: Cnosc
-#   language: R
-
-Kernel:
-  path: early_integration/Kernel.R 
-  short_name: Kern
+concatscale:
+  path: early_integration/concat_scale.R 
+  short_name: Consc
   language: R
+
+concatnoscale:
+  path: early_integration/concat_noscale.R 
+  short_name: Cnosc
+  language: R
+
+# Kernel:
+#   path: early_integration/Kernel.R 
+#   short_name: Kern
+#   language: R
 
 # OT:
 #   path: early_integration/OT.py 
