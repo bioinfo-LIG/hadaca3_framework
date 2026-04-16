@@ -56,7 +56,7 @@ DWLS :  #must be a unique ID
   omic: [RNA]
   
 
-MuSiC :  #must be a unique ID
-  path: deconvolution/MuSiC.R
-  short_name: MuSiC
-  omic: [RNA]
+# MuSiC :  #must be a unique ID
+#   path: deconvolution/MuSiC.R
+#   short_name: MuSiC
+#   omic: [RNA]
