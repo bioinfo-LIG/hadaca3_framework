@@ -1,0 +1,3458 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "cr": "http://mlcommons.org/croissant/",
+    "sc": "https://schema.org/",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "dct": "http://purl.org/dc/terms/",
+    "name": "sc:name",
+    "description": "sc:description",
+    "url": "sc:url",
+    "license": "sc:license",
+    "version": "sc:version",
+    "keywords": "sc:keywords",
+    "datePublished": "sc:datePublished",
+    "creator": "sc:creator",
+    "encodingFormat": "sc:encodingFormat",
+    "sha256": "sc:sha256",
+    "contentSize": "sc:contentSize",
+    "contentUrl": "sc:contentUrl",
+    "fileObject": "cr:FileObject",
+    "fileSet": "cr:FileSet",
+    "recordSet": "cr:RecordSet",
+    "field": "cr:Field",
+    "dataType": "cr:dataType",
+    "source": "cr:source",
+    "extract": "cr:extract",
+    "fileProperty": "cr:fileProperty",
+    "containedIn": "cr:containedIn",
+    "references": "cr:references",
+    "subField": "cr:subField",
+    "parentField": "cr:parentField",
+    "format": "cr:format",
+    "includes": "cr:includes",
+    "regex": "cr:regex",
+    "separator": "cr:separator",
+    "jsonPath": "cr:jsonPath",
+    "cr:DataTransformation": "cr:DataTransformation",
+    "sc:SoftwareSourceCode": "sc:SoftwareSourceCode",
+    "sc:programmingLanguage": "sc:programmingLanguage",
+    "sc:codeRepository": "sc:codeRepository",
+    "sc:runtimePlatform": "sc:runtimePlatform",
+    "sc:softwareRequirements": "sc:softwareRequirements",
+    "cr:transform": "cr:transform",
+    "cr:applyTransform": "cr:applyTransform"
+  },
+  "@type": "sc:Dataset",
+  "name": "HADACA3 – PDAC Multi-Omics Deconvolution Benchmark",
+  "description": "A benchmark dataset for cell-type deconvolution in pancreatic ductal adenocarcinoma (PDAC), released as part of the HADACA3 challenge. Includes RNA expression mixtures, DNA methylation mixtures, and paired ground-truth cell-type proportions for 24 pseudo-samples across 9 simulation scenarios (in silico Dirichlet with various dependency/source structures, pseudobulk, in vitro, in vivo), each replicated twice. Reference profiles are provided for bulk RNA-seq, methylation arrays, and single-cell RNA-seq (three independent PDAC cohorts: baron, peng, raghavan). Cell types: endothelial (endo), fibroblast (fibro), immune, classical PDAC (classic), basal-like PDAC (basal). Helper scripts for reading and writing all HDF5 files are provided in Python (data_processing.py, using h5py/anndata) and R (data_processing.R, using rhdf5/Matrix) at https://github.com/bioinfo-LIG/hadaca3_framework/tree/main/utils.",
+  "version": "1.0.0",
+  "url": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "creator": {
+    "@type": "sc:Organization",
+    "name": "EpiMed – Université Grenoble Alpes",
+    "url": "http://epimed.univ-grenoble-alpes.fr"
+  },
+  "keywords": [
+    "deconvolution",
+    "cell-type proportion",
+    "pancreatic cancer",
+    "PDAC",
+    "RNA-seq",
+    "DNA methylation",
+    "single-cell RNA-seq",
+    "multi-omics",
+    "benchmark",
+    "HADACA3",
+    "bioinformatics",
+    "in silico simulation"
+  ],
+  "cr:conformsTo": "http://mlcommons.org/croissant/1.0",
+  "distribution": [
+    {
+      "@type": "cr:FileObject",
+      "@id": "ref",
+      "name": "ref",
+      "description": "Reference profiles: bulk RNA-seq (5 cell types × 15 908 genes), DNA methylation (5 cell types × 23 724 CpG sites), and three single-cell RNA-seq cohorts (baron 551 cells, peng 4 974 cells, raghavan 4 953 cells). Sparse matrices stored in CSC format (data/indices/indptr/shape).",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/ref.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicodirichletCopule",
+      "name": "mixes1_insilicodirichletCopule",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: In silico Dirichlet sampling with copula-based inter-cell-type dependency. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletCopule_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicodirichletCopule",
+      "name": "groundtruth1_insilicodirichletCopule",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: In silico Dirichlet sampling with copula-based inter-cell-type dependency. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletCopule_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicodirichletCopule",
+      "name": "mixes2_insilicodirichletCopule",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: In silico Dirichlet sampling with copula-based inter-cell-type dependency. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletCopule_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicodirichletCopule",
+      "name": "groundtruth2_insilicodirichletCopule",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: In silico Dirichlet sampling with copula-based inter-cell-type dependency. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletCopule_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicodirichletEMFA",
+      "name": "mixes1_insilicodirichletEMFA",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: In silico Dirichlet sampling with EM-factor-analysis dependency structure. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletEMFA_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicodirichletEMFA",
+      "name": "groundtruth1_insilicodirichletEMFA",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: In silico Dirichlet sampling with EM-factor-analysis dependency structure. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletEMFA_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicodirichletEMFA",
+      "name": "mixes2_insilicodirichletEMFA",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: In silico Dirichlet sampling with EM-factor-analysis dependency structure. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletEMFA_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicodirichletEMFA",
+      "name": "groundtruth2_insilicodirichletEMFA",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: In silico Dirichlet sampling with EM-factor-analysis dependency structure. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletEMFA_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicodirichletEMFAImmuneLowProp",
+      "name": "mixes1_insilicodirichletEMFAImmuneLowProp",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: EMFA Dirichlet scenario with artificially low immune-cell proportions. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletEMFAImmuneLowProp_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicodirichletEMFAImmuneLowProp",
+      "name": "groundtruth1_insilicodirichletEMFAImmuneLowProp",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: EMFA Dirichlet scenario with artificially low immune-cell proportions. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletEMFAImmuneLowProp_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicodirichletEMFAImmuneLowProp",
+      "name": "mixes2_insilicodirichletEMFAImmuneLowProp",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: EMFA Dirichlet scenario with artificially low immune-cell proportions. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletEMFAImmuneLowProp_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicodirichletEMFAImmuneLowProp",
+      "name": "groundtruth2_insilicodirichletEMFAImmuneLowProp",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: EMFA Dirichlet scenario with artificially low immune-cell proportions. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletEMFAImmuneLowProp_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicodirichletNoDep",
+      "name": "mixes1_insilicodirichletNoDep",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: In silico Dirichlet sampling with no inter-cell-type dependency (5 cell types). Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletNoDep_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicodirichletNoDep",
+      "name": "groundtruth1_insilicodirichletNoDep",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: In silico Dirichlet sampling with no inter-cell-type dependency (5 cell types). Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicodirichletNoDep",
+      "name": "mixes2_insilicodirichletNoDep",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: In silico Dirichlet sampling with no inter-cell-type dependency (5 cell types). Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicodirichletNoDep",
+      "name": "groundtruth2_insilicodirichletNoDep",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: In silico Dirichlet sampling with no inter-cell-type dependency (5 cell types). Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicodirichletNoDep4CTsource",
+      "name": "mixes1_insilicodirichletNoDep4CTsource",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: No-dependency Dirichlet scenario using only 4 cell-type sources. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletNoDep4CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicodirichletNoDep4CTsource",
+      "name": "groundtruth1_insilicodirichletNoDep4CTsource",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: No-dependency Dirichlet scenario using only 4 cell-type sources. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep4CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicodirichletNoDep4CTsource",
+      "name": "mixes2_insilicodirichletNoDep4CTsource",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: No-dependency Dirichlet scenario using only 4 cell-type sources. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep4CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicodirichletNoDep4CTsource",
+      "name": "groundtruth2_insilicodirichletNoDep4CTsource",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: No-dependency Dirichlet scenario using only 4 cell-type sources. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep4CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicodirichletNoDep6CTsource",
+      "name": "mixes1_insilicodirichletNoDep6CTsource",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: No-dependency Dirichlet scenario using 6 cell-type sources. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletNoDep6CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicodirichletNoDep6CTsource",
+      "name": "groundtruth1_insilicodirichletNoDep6CTsource",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: No-dependency Dirichlet scenario using 6 cell-type sources. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep6CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicodirichletNoDep6CTsource",
+      "name": "mixes2_insilicodirichletNoDep6CTsource",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: No-dependency Dirichlet scenario using 6 cell-type sources. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep6CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicodirichletNoDep6CTsource",
+      "name": "groundtruth2_insilicodirichletNoDep6CTsource",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: No-dependency Dirichlet scenario using 6 cell-type sources. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep6CTsource_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_insilicopseudobulk",
+      "name": "mixes1_insilicopseudobulk",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: In silico pseudobulk aggregation from single-cell profiles. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicopseudobulk_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_insilicopseudobulk",
+      "name": "groundtruth1_insilicopseudobulk",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: In silico pseudobulk aggregation from single-cell profiles. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicopseudobulk_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_insilicopseudobulk",
+      "name": "mixes2_insilicopseudobulk",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: In silico pseudobulk aggregation from single-cell profiles. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicopseudobulk_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_insilicopseudobulk",
+      "name": "groundtruth2_insilicopseudobulk",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: In silico pseudobulk aggregation from single-cell profiles. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicopseudobulk_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_invitro",
+      "name": "mixes1_invitro",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: In vitro cell-line mixing experiment. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_invitro_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_invitro",
+      "name": "groundtruth1_invitro",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: In vitro cell-line mixing experiment. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_invitro_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_invitro",
+      "name": "mixes2_invitro",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: In vitro cell-line mixing experiment. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_invitro_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_invitro",
+      "name": "groundtruth2_invitro",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: In vitro cell-line mixing experiment. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_invitro_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes1_invivo",
+      "name": "mixes1_invivo",
+      "description": "RNA+methylation mixture file – replicate 1. Scenario: In vivo (patient-derived) bulk tissue samples. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_invivo_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth1_invivo",
+      "name": "groundtruth1_invivo",
+      "description": "Ground-truth cell-type proportions – replicate 1. Scenario: In vivo (patient-derived) bulk tissue samples. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_invivo_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "mixes2_invivo",
+      "name": "mixes2_invivo",
+      "description": "RNA+methylation mixture file – replicate 2. Scenario: In vivo (patient-derived) bulk tissue samples. Contains /mix_met/data (24×23724 float64), /mix_rna/data (15908 float64), plus sample/feature labels.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_invivo_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "groundtruth2_invivo",
+      "name": "groundtruth2_invivo",
+      "description": "Ground-truth cell-type proportions – replicate 2. Scenario: In vivo (patient-derived) bulk tissue samples. Contains /groundtruth/data (24×2 float64) for 'classic' and 'basal' PDAC subtypes.",
+      "contentUrl": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_invivo_pdac.h5",
+      "encodingFormat": "application/x-hdf5"
+    }
+  ],
+  "recordSet": [
+    {
+      "@type": "cr:RecordSet",
+      "@id": "reference_bulkRNA",
+      "name": "reference_bulkRNA",
+      "description": "Bulk RNA-seq reference profiles for 5 PDAC cell types (endo, fibro, immune, classic, basal) across 15 908 genes (float64, units ~ CPM/TPM).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "reference_bulkRNA/cell_types",
+          "name": "cell_types",
+          "description": "Cell-type labels: endo, fibro, immune, classic, basal. Shape (5,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_bulkRNA/cell_types"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_bulkRNA/genes",
+          "name": "genes",
+          "description": "HGNC gene symbols. Shape (15908,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_bulkRNA/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_bulkRNA/data",
+          "name": "data",
+          "description": "Expression matrix. Shape (5, 15908), float64. Row order matches cell_types; column order matches genes.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_bulkRNA/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "reference_methylation",
+      "name": "reference_methylation",
+      "description": "DNA methylation reference profiles for 5 PDAC cell types across 23 724 CpG sites (Illumina beta-values, float64).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "reference_methylation/cell_types",
+          "name": "cell_types",
+          "description": "Cell-type labels: endo, fibro, immune, classic, basal. Shape (5,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_met/cell_types"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_methylation/CpG_sites",
+          "name": "CpG_sites",
+          "description": "Illumina cg-IDs (e.g. cg00002426). Shape (23724,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_methylation/data",
+          "name": "data",
+          "description": "Beta-value matrix. Shape (5, 23724), float64. Row order matches cell_types; column order matches CpG_sites.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_met/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "reference_scRNA_baron",
+      "name": "reference_scRNA_baron",
+      "description": "Single-cell RNA-seq reference from the Baron cohort: 551 cells × 20125 genes stored as a sparse CSC matrix (982,828 non-zero entries). Reconstruct with scipy.sparse.csc_matrix((data, indices, indptr), shape=shape).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/cell",
+          "name": "cell",
+          "description": "Cell barcodes/identifiers. Shape (551,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/cell"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/genes",
+          "name": "genes",
+          "description": "Gene symbols. Shape (20125,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/meta",
+          "name": "meta",
+          "description": "Per-cell metadata (cell-type annotation). Shape (551,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/meta"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/data",
+          "name": "data",
+          "description": "Non-zero values of the CSC sparse matrix. Shape (982828,), float.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/indices",
+          "name": "indices",
+          "description": "Row indices of non-zero values (CSC). Shape (982828,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/indices"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/indptr",
+          "name": "indptr",
+          "description": "Column pointer array (CSC). Shape (552,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/indptr"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_baron/shape",
+          "name": "shape",
+          "description": "Dense matrix dimensions [n_genes, n_cells]. Shape (2,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_baron/shape"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "reference_scRNA_peng",
+      "name": "reference_scRNA_peng",
+      "description": "Single-cell RNA-seq reference from the Peng cohort: 4974 cells × 24005 genes stored as a sparse CSC matrix (12,399,241 non-zero entries). Reconstruct with scipy.sparse.csc_matrix((data, indices, indptr), shape=shape).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/cell",
+          "name": "cell",
+          "description": "Cell barcodes/identifiers. Shape (4974,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/cell"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/genes",
+          "name": "genes",
+          "description": "Gene symbols. Shape (24005,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/meta",
+          "name": "meta",
+          "description": "Per-cell metadata (cell-type annotation). Shape (4974,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/meta"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/data",
+          "name": "data",
+          "description": "Non-zero values of the CSC sparse matrix. Shape (12399241,), float.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/indices",
+          "name": "indices",
+          "description": "Row indices of non-zero values (CSC). Shape (12399241,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/indices"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/indptr",
+          "name": "indptr",
+          "description": "Column pointer array (CSC). Shape (4975,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/indptr"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_peng/shape",
+          "name": "shape",
+          "description": "Dense matrix dimensions [n_genes, n_cells]. Shape (2,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_peng/shape"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "reference_scRNA_raghavan",
+      "name": "reference_scRNA_raghavan",
+      "description": "Single-cell RNA-seq reference from the Raghavan cohort: 4953 cells × 18710 genes stored as a sparse CSC matrix (12,263,755 non-zero entries). Reconstruct with scipy.sparse.csc_matrix((data, indices, indptr), shape=shape).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/cell",
+          "name": "cell",
+          "description": "Cell barcodes/identifiers. Shape (4953,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/cell"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/genes",
+          "name": "genes",
+          "description": "Gene symbols. Shape (18710,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/meta",
+          "name": "meta",
+          "description": "Per-cell metadata (cell-type annotation). Shape (4953,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/meta"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/data",
+          "name": "data",
+          "description": "Non-zero values of the CSC sparse matrix. Shape (12263755,), float.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/indices",
+          "name": "indices",
+          "description": "Row indices of non-zero values (CSC). Shape (12263755,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/indices"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/indptr",
+          "name": "indptr",
+          "description": "Column pointer array (CSC). Shape (4954,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/indptr"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "reference_scRNA_raghavan/shape",
+          "name": "shape",
+          "description": "Dense matrix dimensions [n_genes, n_cells]. Shape (2,), int.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "ref"
+            },
+            "extract": {
+              "fileProperty": "/ref_scRNA/ref_sc_raghavan/shape"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicodirichletCopule",
+      "name": "mixtures_insilicodirichletCopule",
+      "description": "RNA + methylation mixture observations for scenario 'insilicodirichletCopule'. In silico Dirichlet sampling with copula-based inter-cell-type dependency. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletCopule_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicodirichletCopule",
+      "name": "groundtruth_insilicodirichletCopule",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicodirichletCopule'. In silico Dirichlet sampling with copula-based inter-cell-type dependency. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletCopule_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletCopule_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletCopule_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletCopule_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletCopule_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletCopule_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletCopule"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicodirichletEMFA",
+      "name": "mixtures_insilicodirichletEMFA",
+      "description": "RNA + methylation mixture observations for scenario 'insilicodirichletEMFA'. In silico Dirichlet sampling with EM-factor-analysis dependency structure. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFA_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicodirichletEMFA",
+      "name": "groundtruth_insilicodirichletEMFA",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicodirichletEMFA'. In silico Dirichlet sampling with EM-factor-analysis dependency structure. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFA_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFA_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFA_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFA_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFA_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFA_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletEMFA"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicodirichletEMFAImmuneLowProp",
+      "name": "mixtures_insilicodirichletEMFAImmuneLowProp",
+      "description": "RNA + methylation mixture observations for scenario 'insilicodirichletEMFAImmuneLowProp'. EMFA Dirichlet scenario with artificially low immune-cell proportions. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletEMFAImmuneLowProp_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp",
+      "name": "groundtruth_insilicodirichletEMFAImmuneLowProp",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicodirichletEMFAImmuneLowProp'. EMFA Dirichlet scenario with artificially low immune-cell proportions. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletEMFAImmuneLowProp_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletEMFAImmuneLowProp"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicodirichletNoDep",
+      "name": "mixtures_insilicodirichletNoDep",
+      "description": "RNA + methylation mixture observations for scenario 'insilicodirichletNoDep'. In silico Dirichlet sampling with no inter-cell-type dependency (5 cell types). Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicodirichletNoDep",
+      "name": "groundtruth_insilicodirichletNoDep",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicodirichletNoDep'. In silico Dirichlet sampling with no inter-cell-type dependency (5 cell types). Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicodirichletNoDep4CTsource",
+      "name": "mixtures_insilicodirichletNoDep4CTsource",
+      "description": "RNA + methylation mixture observations for scenario 'insilicodirichletNoDep4CTsource'. No-dependency Dirichlet scenario using only 4 cell-type sources. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep4CTsource_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicodirichletNoDep4CTsource",
+      "name": "groundtruth_insilicodirichletNoDep4CTsource",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicodirichletNoDep4CTsource'. No-dependency Dirichlet scenario using only 4 cell-type sources. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep4CTsource_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep4CTsource_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep4CTsource_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep4CTsource_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep4CTsource_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep4CTsource_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep4CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicodirichletNoDep6CTsource",
+      "name": "mixtures_insilicodirichletNoDep6CTsource",
+      "description": "RNA + methylation mixture observations for scenario 'insilicodirichletNoDep6CTsource'. No-dependency Dirichlet scenario using 6 cell-type sources. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicodirichletNoDep6CTsource_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicodirichletNoDep6CTsource",
+      "name": "groundtruth_insilicodirichletNoDep6CTsource",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicodirichletNoDep6CTsource'. No-dependency Dirichlet scenario using 6 cell-type sources. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep6CTsource_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep6CTsource_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep6CTsource_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep6CTsource_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep6CTsource_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicodirichletNoDep6CTsource_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicodirichletNoDep6CTsource"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_insilicopseudobulk",
+      "name": "mixtures_insilicopseudobulk",
+      "description": "RNA + methylation mixture observations for scenario 'insilicopseudobulk'. In silico pseudobulk aggregation from single-cell profiles. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_insilicopseudobulk_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_insilicopseudobulk",
+      "name": "groundtruth_insilicopseudobulk",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'insilicopseudobulk'. In silico pseudobulk aggregation from single-cell profiles. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicopseudobulk_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicopseudobulk_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicopseudobulk_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicopseudobulk_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicopseudobulk_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_insilicopseudobulk_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_insilicopseudobulk"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_invitro",
+      "name": "mixtures_invitro",
+      "description": "RNA + methylation mixture observations for scenario 'invitro'. In vitro cell-line mixing experiment. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invitro_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_invitro",
+      "name": "groundtruth_invitro",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'invitro'. In vitro cell-line mixing experiment. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invitro_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invitro_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invitro_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_invitro"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invitro_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invitro_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invitro_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_invitro"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "mixtures_invivo",
+      "name": "mixtures_invivo",
+      "description": "RNA + methylation mixture observations for scenario 'invivo'. In vivo (patient-derived) bulk tissue samples. Two replicates (rep1, rep2). Each replicate: 24 pseudo-samples × 23 724 CpG sites (methylation) and 15 908 genes (RNA).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep1/met_samples",
+          "name": "rep1_met_samples",
+          "description": "Replicate 1 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep1/CpG_sites",
+          "name": "rep1_CpG_sites",
+          "description": "Replicate 1 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep1/met_data",
+          "name": "rep1_met_data",
+          "description": "Replicate 1 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep1/rna_samples",
+          "name": "rep1_rna_samples",
+          "description": "Replicate 1 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep1/rna_genes",
+          "name": "rep1_rna_genes",
+          "description": "Replicate 1 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep1/rna_data",
+          "name": "rep1_rna_data",
+          "description": "Replicate 1 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep2/met_samples",
+          "name": "rep2_met_samples",
+          "description": "Replicate 2 – Sample identifiers for the methylation block. Shape (24,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep2/CpG_sites",
+          "name": "rep2_CpG_sites",
+          "description": "Replicate 2 – Illumina cg-IDs. Shape (23724,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/CpG_sites"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep2/met_data",
+          "name": "rep2_met_data",
+          "description": "Replicate 2 – Methylation beta-value mixture matrix. Shape (24, 23724), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_met/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep2/rna_samples",
+          "name": "rep2_rna_samples",
+          "description": "Replicate 2 – Sample identifiers for the RNA block. Shape (24,). Matches met_samples.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep2/rna_genes",
+          "name": "rep2_rna_genes",
+          "description": "Replicate 2 – Gene symbols for the RNA mixture. Shape (15908,). Identical across files.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "mixtures_invivo_rep2/rna_data",
+          "name": "rep2_rna_data",
+          "description": "Replicate 2 – Bulk RNA expression mixture vector. Shape (15908,), float64.",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "mixes2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/mix_rna/data"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "groundtruth_invivo",
+      "name": "groundtruth_invivo",
+      "description": "Ground-truth cell-type proportion matrices for scenario 'invivo'. In vivo (patient-derived) bulk tissue samples. Two replicates. Each: 24 samples × 2 PDAC subtypes (classic, basal).",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invivo_rep1/samples",
+          "name": "rep1_samples",
+          "description": "Replicate 1 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invivo_rep1/genes",
+          "name": "rep1_column_labels",
+          "description": "Replicate 1 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invivo_rep1/data",
+          "name": "rep1_data",
+          "description": "Replicate 1 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth1_invivo"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invivo_rep2/samples",
+          "name": "rep2_samples",
+          "description": "Replicate 2 – Sample identifiers. Shape (24,). Matches the corresponding mixture file.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/samples"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invivo_rep2/genes",
+          "name": "rep2_column_labels",
+          "description": "Replicate 2 – Column labels of the proportion matrix: ['classic', 'basal']. Shape (2,).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/genes"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "groundtruth_invivo_rep2/data",
+          "name": "rep2_data",
+          "description": "Replicate 2 – Ground-truth proportion matrix. Shape (24, 2), float64. Columns: 'classic' (PDAC classical subtype) and 'basal' (PDAC basal-like subtype).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "groundtruth2_invivo"
+            },
+            "extract": {
+              "fileProperty": "/groundtruth/data"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "cr:splits": [
+    {
+      "@type": "cr:Split",
+      "name": "replicate_1",
+      "description": "First replicate of each scenario (mixes1_* and groundtruth1_* files)."
+    },
+    {
+      "@type": "cr:Split",
+      "name": "replicate_2",
+      "description": "Second replicate of each scenario (mixes2_* and groundtruth2_* files)."
+    }
+  ],
+  "cr:DataTransformation": [
+    {
+      "@type": "cr:DataTransformation",
+      "@id": "transform_read_python",
+      "name": "Read HDF5 files with Python",
+      "description": "Load any dataset file using read_hdf5(path) from data_processing.py. read_hdf5(path) returns mix_rna (pandas DataFrame, genes × samples) and mix_met (pandas DataFrame, CpG_sites × samples). scRNA sparse matrices are reconstructed as AnnData via scipy.sparse.csc_matrix((data, indices, indptr), shape=shape).T.",
+      "cr:applyTransform": {
+        "@id": "helper_python"
+      }
+    },
+    {
+      "@type": "cr:DataTransformation",
+      "@id": "transform_read_r",
+      "name": "Read HDF5 files with R",
+      "description": "Load any dataset file using read_hdf5(path) from data_processing.R. For mixes*.h5 files, read_mix_hdf5(path) is also available and returns list(mix_rna, mix_met) as R matrices with row/colnames set. scRNA sparse matrices are reconstructed as dgCMatrix objects (Matrix package). Seurat objects are reconstructed automatically when the 'object_type' flag is present in the HDF5 group.",
+      "cr:applyTransform": {
+        "@id": "helper_r"
+      }
+    }
+  ],
+  "sc:SoftwareSourceCode": [
+    {
+      "@type": "sc:SoftwareSourceCode",
+      "@id": "helper_python",
+      "name": "data_processing.py",
+      "description": "Python helper library for reading and writing all HDF5 files in this dataset. Key public functions: read_hdf5(path) – generic loader that returns a dict with keys matching HDF5 top-level groups (ref_bulkRNA/ref_met as pandas DataFrames, ref_scRNA as AnnData objects via scipy CSC reconstruction); read_all_ref_hdf5(path) – dedicated loader for ref.h5 returning bulk RNA, methylation and scRNA dicts; write_global_hdf5(path, data_list)  – writers. Requires: h5py, numpy, pandas, scipy, anndata.",
+      "programmingLanguage": "Python",
+      "sc:codeRepository": "https://github.com/bioinfo-LIG/hadaca3_framework",
+      "contentUrl": "https://github.com/bioinfo-LIG/hadaca3_framework/blob/main/utils/data_processing.py",
+      "sc:runtimePlatform": "Python ≥ 3.8",
+      "sc:softwareRequirements": "h5py, numpy, pandas, scipy, anndata",
+      "sc:targetProduct": {
+        "@type": "sc:SoftwareApplication",
+        "name": "HADACA3 framework",
+        "url": "https://github.com/bioinfo-LIG/hadaca3_framework"
+      }
+    },
+    {
+      "@type": "sc:SoftwareSourceCode",
+      "@id": "helper_r",
+      "name": "data_processing.R",
+      "description": "R helper library for reading and writing all HDF5 files in this dataset. Key public functions: read_hdf5(path) – generic loader returning a named list; ref_bulkRNA/ref_met as matrices with rownames (genes/CpG_sites) and colnames (cell types/samples), ref_scRNA as lists of list(counts=dgCMatrix, metadata=data.frame) or Seurat objects when applicable; write_global_hdf5 / write_mix_hdf5 / write_all_ref_hdf5 – writers. Requires: rhdf5, Matrix (and optionally Seurat for Seurat-object round-trips).",
+      "programmingLanguage": "R",
+      "sc:codeRepository": "https://github.com/bioinfo-LIG/hadaca3_framework",
+      "contentUrl": "https://github.com/bioinfo-LIG/hadaca3_framework/blob/main/utils/data_processing.R",
+      "sc:runtimePlatform": "R ≥ 4.0",
+      "sc:softwareRequirements": "rhdf5, Matrix",
+      "sc:targetProduct": {
+        "@type": "sc:SoftwareApplication",
+        "name": "HADACA3 framework",
+        "url": "https://github.com/bioinfo-LIG/hadaca3_framework"
+      }
+    }
+  ]
+}
