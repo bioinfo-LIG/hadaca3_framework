@@ -1,11 +1,12 @@
 {
-  "@context": {
+    "@context": {
     "@language": "en",
     "@vocab": "https://schema.org/",
+    "citeAs": "cr:citeAs",
+    "column": "cr:column",
+    "conformsTo": "dct:conformsTo",
     "cr": "http://mlcommons.org/croissant/",
     "rai": "http://mlcommons.org/croissant/RAI/",
-    "sc": "https://schema.org/",
-    "ml": "http://mlcommons.org/schema/",
     "data": {
       "@id": "cr:data",
       "@type": "@json"
@@ -14,6 +15,8 @@
       "@id": "cr:dataType",
       "@type": "@vocab"
     },
+    "dct": "http://purl.org/dc/terms/",
+    "equivalentProperty": "cr:equivalentProperty",
     "examples": {
       "@id": "cr:examples",
       "@type": "@json"
@@ -21,6 +24,8 @@
     "extract": "cr:extract",
     "field": "cr:field",
     "fileProperty": "cr:fileProperty",
+    "fileObject": "cr:fileObject",
+    "fileSet": "cr:fileSet",
     "format": "cr:format",
     "includes": "cr:includes",
     "isLiveDataset": "cr:isLiveDataset",
@@ -34,6 +39,8 @@
     "regex": "cr:regex",
     "repeated": "cr:repeated",
     "replace": "cr:replace",
+    "samplingRate": "cr:samplingRate",
+    "sc": "https://schema.org/",
     "separator": "cr:separator",
     "source": "cr:source",
     "subField": "cr:subField",
@@ -43,7 +50,6 @@
   "name": "HADACA3_PDAC_MultiOmics_Deconvolution_Benchmark",
   "description": "A benchmark dataset for cell-type deconvolution in pancreatic ductal adenocarcinoma (PDAC), released as part of the HADACA3 challenge. Includes RNA expression mixtures, DNA methylation mixtures, and paired ground-truth cell-type proportions for 24 pseudo-samples across 9 simulation scenarios (in silico Dirichlet with various dependency/source structures, pseudobulk, in vitro, in vivo), each replicated twice. Reference profiles are provided for bulk RNA-seq, methylation arrays, and single-cell RNA-seq (three independent PDAC cohorts: baron, peng, raghavan). Cell types: endothelial (endo), fibroblast (fibro), immune, classical PDAC (classic), basal-like PDAC (basal). Helper scripts for reading and writing all HDF5 files are provided in Python (data_processing.py, using h5py/anndata) and R (data_processing.R, using rhdf5/Matrix) at https://github.com/bioinfo-LIG/hadaca3_framework/tree/main/utils.",
   "version": "1.0.0",
-  "url": "http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/",
   "license": "https://creativecommons.org/licenses/by/4.0/",
   "creator": {
     "@type": "sc:Organization",
@@ -3487,5 +3493,6 @@
       }
     }
   ],
+  "datePublished": "2026-03-01",
   "citation": "HADACA3 challenge – EpiMed, Université Grenoble Alpes. https://github.com/bioinfo-LIG/hadaca3_framework"
 }
