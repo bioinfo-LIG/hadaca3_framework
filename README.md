@@ -15,7 +15,6 @@ This project is designed to be **extensible**—you can easily add new functions
 
 **Supported languages:** R and Python.
 *Note:* For now, only **early integration functions** are fully compatible with Python. Python support for other block types can be added—contributions are welcome!
-
 ---
 
 ### Steps to Add Your Function
@@ -28,6 +27,9 @@ Edit the **YAML metadata file** corresponding to your function’s block type. T
 - `deconvolution.yml` (de)
 - `early_integration.yml` (ei)
 - `late_integration.yml` (li)
+
+By default functions are selected from the folder "function_metada_and_selection/CI_functions_selection/*.yml". 
+A minimal test setup is available under "function_metada_and_selection/local_test_setup"
 
 For a detailed description of the metadata structure, see the [YML Metadata Section](#yml-metadata).
 
@@ -44,7 +46,7 @@ For a detailed description of the metadata structure, see the [YML Metadata Sect
 - **Test locally before submitting**:
   - Download the datasets and **test your function locally** using a reduced subset of the data.
   - Run the pipeline with your function by following the instructions in the **[Nextflow section](#nextflow)**.
-  - Refer to the `benchmark/setups/` folder for subset configuration examples.
+  - Refer to the `function_metada_and_selection/setups/` folder for subset configuration examples.
 
 - **Automated CI evaluation**:
   Once pushed, your code will **automatically run on the CI**, and the results will be available on the GitHub page.
@@ -189,10 +191,7 @@ wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/res
 Rscript -e 'rmarkdown::render("08_metaanalysis.Rmd")'
 ```
 
-
-
 ## Execute the pipeline: 
-
 
 
 ### N E X T F L O W  
@@ -209,10 +208,9 @@ nextflow run 00_run_pipeline.nf -with-dag -with-report -with-trace -with-timelin
 
 Run with minimal setup to debug fonction. 
 ```
-nextflow run 00_run_pipeline.nf -resume --setup_folder benchmark/Local_test_setup/
+nextflow run 00_run_pipeline.nf  -with-report -resume --setup_folder function_metada_and_selection/Local_test_setup/
 ```
 
-nextflow run 00_run_pipeline.nf  -with-report -resume --setup_folder benchmark/Local_test_setup/
 
 
 ### Continuous Integration description 
@@ -230,10 +228,6 @@ Also it is possible to skip the execution of the partial CI by adding one of the
 - [no ci]
 - [skip actions]
 - [actions skip]
-
-
-
-
 
 ## Blocks description
 
@@ -292,7 +286,7 @@ A normal user, should not edit the pipeline file directly. To add and remove fun
 The yml should contains these fields:
 ```{yml}
 normalize : 
-  path: preprocessing/normalize.R
+  path: function_blocks/preprocessing/normalize.R
   short_name: norm
   omic: [mixMET,MET]
 ```
@@ -374,10 +368,6 @@ In the hadaca3_framework project, Python and R libraries are provided to read an
 They are named *data_processing* and are located in the *utils* folder.  
 
 Useful functions: 
-- *read_all_hdf5(path_of_file,..)* returns the multi_data (cd data types). The second **optional** argument is *to_read=c('mix','ref')* which tells which data will be read. By default, all data of multi_data are read. 
-
-- *write_all_hdf5(path,multi_data)* writes multi_data to *path* (cf data types). 
-
 - *read_hdf5(path)* returns a data_list. This function browses the file from the path and reads all subfolders inside this path. For instance, if the file "exemple.h5" contains /prop1 and /prop2, *read_hdf5(path)* returns a list(prop1, prop2).
 
 - *write_global_hdf5(path,data_list)* writes all sub-data inside the data_list. 
@@ -386,22 +376,10 @@ For instance, data_list contains prop1 and prop2, *write_global_hdf5(file,data_l
 
 All data should have HDF5 format with a compression level set to 6 and 'gzip' as the compression algorithm. Furthermore, to reduce storage footprints, the data are shuffled and written in one single chunk (chunk size = length(data)). *HDF5 shuffling does not impact order of the uncompressed file*.
 
-# nextflow metadata format. 
 
-the meta data in the nextflow (.nf) file contains : 
+# Benchmark of nextflow vs snakemake
 
-* omic
-* dataset
-* ref
-* pp_fun
-* fs_fun
-* de_fun
-* li_fun 
-* ei_fun 
-
-# Benchmark 
-
-There is an attempt to perfom a benchmark of snakemake vs nextflow. 
+There is a benchmark of snakemake vs nextflow. 
 The motivation behind the developpement of nextflow is the mandatory step of DAG creation in snakemake which is very time consuming. 
 
 See the README.md inside benchmark folder. 

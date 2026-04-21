@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 params.wrapperDir='./wrapper/'
 
 // This should be overwritten 
-params.setup_folder = './CI_functions_selection/'
+params.setup_folder = './function_metada&selection/CI_functions_selection/'
 
 
 params.config_files = [
