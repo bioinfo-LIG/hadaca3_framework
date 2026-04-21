@@ -1,5 +1,5 @@
 # uniqueID :  #must be a unique ID
-#   path: feature_selection/fs.R
+#   path: function_blocks/feature_selection/fs.R
 #   short_name: FS01
 #   input:
 #     RNA: 0

@@ -19,16 +19,20 @@ l_datasets = c('invitro', 'invivo', 'insilicopseudobulk', 'insilicodirichletEMFA
 # l_datasets = c( 'insilicodirichletEMFA', 'insilicodirichletCopule')
 
 
-path_old_data = 'data/old_datasets/'
-path_H5_data = 'data/' 
+# path_old_data = 'data/old_datasets/'
+# path_H5_data = 'data/' 
+
+path_old_data = './'
+path_H5_data = 'data_hdf5/' 
+
 
 for (dataset in l_datasets){
     print(dataset)
-    # mix = paste0("mixes1_",dataset,"_",domain)
-    # groundtruth = paste0("groundtruth1_",dataset,"_",domain)
+    mix = paste0("mixes1_",dataset,"_",domain)
+    groundtruth = paste0("groundtruth1_",dataset,"_",domain)
     
-    mix = paste0("mixes2_",dataset,"_",domain)
-    groundtruth = paste0("groundtruth2_",dataset,"_",domain)
+    # mix = paste0("mixes2_",dataset,"_",domain)
+    # groundtruth = paste0("groundtruth2_",dataset,"_",domain)
 
 
     # r_mix = readRDS(paste0(path_old_data,"mixes/filtered",mix,'.rds'))

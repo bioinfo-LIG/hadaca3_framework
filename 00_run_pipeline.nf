@@ -1,13 +1,10 @@
 #!/usr/bin/env nextflow
 
-import groovy.yaml.YamlSlurper
-
 nextflow.enable.dsl=2
-
-workDir='~/project/hadaca3_framework/'
+params.wrapperDir='./wrapper/'
 
 // This should be overwritten 
-params.setup_folder = './'
+params.setup_folder = './CI_functions_selection/'
 
 
 params.config_files = [
@@ -21,26 +18,26 @@ params.config_files = [
 ]
 
 params.reference = ['data/ref.h5']
-params.cleaner = 'global_cleaning/clean_matrix.R'
+params.cleaner = './function_blocks/global_cleaning/clean_matrix.R'
 params.mixomics = ['mixRNA', 'mixMET']
 params.refomics = ['MET', 'RNA', 'scRNA']
 params.omic_dirs = params.mixomics + params.refomics
 
 
 params.wrapper = [
-    script_01_mix: '01_global_preprocess_mix.R',
-    script_01_ref : '01_global_preprocess_ref.R', 
-    script_02 : "02_preprocess.R", 
-    script_03 : '03_features_selection.R',
-    script_04_rna : '04_decovolution_RNA_unit_pipA.R',
-    script_04_met : '04_decovolution_MET_unit_pipA.R',
-    script_04_early : '04_Early_integration_pipB.R',
-    script_04_early_py : '04_Early_integration_pipB_python.py',
-    script_05_early_deco : '05_early_decovolution.R',
-    script_05 : '05_late_integration_A.R',
-    script_06 : '06_scoring.R',
-    script_07 : '07_prep_metaanalysis.Rmd',
-    script_08 : '08_metaanalysis.Rmd'
+    script_01_mix:  params.wrapperDir+'01_global_preprocess_mix.R',
+    script_01_ref : params.wrapperDir+'01_global_preprocess_ref.R', 
+    script_02 :     params.wrapperDir+"02_preprocess.R", 
+    script_03 :     params.wrapperDir+'03_features_selection.R',
+    script_04_rna : params.wrapperDir+'04_decovolution_RNA_unit_pipA.R',
+    script_04_met : params.wrapperDir+'04_decovolution_MET_unit_pipA.R',
+    script_04_early :       params.wrapperDir+ '04_Early_integration_pipB.R',
+    script_04_early_py :    params.wrapperDir+ '04_Early_integration_pipB_python.py',
+    script_05_early_deco :  params.wrapperDir+ '05_early_decovolution.R',
+    script_05 :  params.wrapperDir+'05_late_integration_A.R',
+    script_06 :  params.wrapperDir+'06_scoring.R',
+    script_07 :  params.wrapperDir+'07_prep_metaanalysis.Rmd',
+    script_08 :  params.wrapperDir+'08_metaanalysis.Rmd'
 ]
 
 params.utils = "utils/data_processing.R"
@@ -57,19 +54,20 @@ workflow {
     def CONFIG = [:]
 
     params.config_files.each { key, filePath ->
-        def parsedContent = new YamlSlurper().parse(filePath as File)
+    
+        def parsedContent = new groovy.yaml.YamlSlurper().parse(filePath as File) 
         CONFIG[key] = parsedContent
     }
 
-    original_datasets_files = CONFIG['datasets'].collect { k, v -> v['path'] }.flatten()
-    cleaned_datasets_files = CONFIG['datasets'].keySet().collect { "output/mixes/${it}" }
+    // original_datasets_files = CONFIG['datasets'].collect { k, v -> v['path'] }.flatten()
+    // cleaned_datasets_files = CONFIG['datasets'].keySet().collect { "output/mixes/${it}" }
 
 
     // ################## Computing cleaned mix and ref clean and generating a tuple with key as the dataset or ref name and output file. 
 
-    def utils_channel =  Channel.fromPath(params.utils)
+    def utils_channel =  channel.fromPath(params.utils)
 
-    ref_input = Channel.of (
+    ref_input = channel.of (
         tuple(     
         [ id: "ref",
         // ref: "ref", 
@@ -98,7 +96,7 @@ workflow {
             ))
         }
 
-    out_mix =  Channel.fromList(dataset_tuple) | Cleaning_mix
+    out_mix =  channel.fromList(dataset_tuple) | Cleaning_mix
     
 
 
@@ -128,7 +126,7 @@ workflow {
 
     }
 
-    pp_mix = Channel.fromList( pp_mix_path)
+    pp_mix = channel.fromList( pp_mix_path)
     .combine(out_mix)
     .combine(out_cleaned_ref)
     .map{pp_meta,pp_file,file_dep,mix_meta,mix_file,ref_met,ref_file ->
@@ -139,10 +137,8 @@ workflow {
         tuple(dup_pp_meta,pp_file,file_dep,mix_file,ref_file,file(params.wrapper.script_02),file(params.utils))
     }
 
-    // pp_ref_path could be populated during the loop above.... 
     pp_ref_path = []
     CONFIG['pre_proc'].each { pp, ppv ->
-        // if(!ppv.not_intercompatible){
             params.refomics.each { omic ->
                 if (ppv['omic'].contains(omic) || ppv['omic'].contains('ANY')){
                     pp_ref_path.add(tuple(
@@ -159,10 +155,9 @@ workflow {
                     ))
                 }
             }
-        // }
     }
 
-    pp_ref =  Channel.fromList( pp_ref_path)
+    pp_ref =  channel.fromList( pp_ref_path)
     .combine(out_cleaned_ref)
     .map{pp_meta,pp_file,file_dep,mix_file,ref_met,ref_file ->
         def dup_pp_meta = pp_meta.clone() 

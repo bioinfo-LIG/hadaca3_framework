@@ -1,35 +1,35 @@
 ##Working 
 nnls :  #must be a unique ID
-  path: deconvolution/nnls.R
+  path: function_blocks/deconvolution/nnls.R
   short_name: NNLS
 
 # lm :  #must be a unique ID
-#   path: deconvolution/lm.R
+#   path: function_blocks/deconvolution/lm.R
 #   short_name: LM
 
 # epic :  #must be a unique ID
-#   path: deconvolution/EPIC.R
+#   path: function_blocks/deconvolution/EPIC.R
 #   short_name: EPIC
 
 ##only with scrna
 # BisqueRNA : #Totest  #must be a unique ID
-#   path: deconvolution/BisqueRNA.R
+#   path: function_blocks/deconvolution/BisqueRNA.R
 #   short_name: BRNA
 #   omic : [scRNA]
 #   EI : [spls_sc]
 
 # RLR :  #must be a unique ID
-#   path: deconvolution/RLR.R
+#   path: function_blocks/deconvolution/RLR.R
 #   short_name: RLR
 
 # # nnlslargeref :  #must be a unique ID
-# #   path: deconvolution/nnls_largeref.R
+# #   path: function_blocks/deconvolution/nnls_largeref.R
 # #   short_name: nnla
 
 # RLRpoisson :  #must be a unique ID
-#   path: deconvolution/RLR_poisson.R
+#   path: function_blocks/deconvolution/RLR_poisson.R
 #   short_name: RLRp
 
 # RLRnnls :  #must be a unique ID
-#   path: deconvolution/RLR_nnls.R
+#   path: function_blocks/deconvolution/RLR_nnls.R
 #   short_name: RLRn

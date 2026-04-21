@@ -1,8 +1,8 @@
 
 nnls :  #must be a unique ID
-  path: deconvolution/nnls.R
+  path: function_blocks/deconvolution/nnls.R
   short_name: NNLS
 
 lm :  #must be a unique ID
-  path: deconvolution/lm.R
+  path: function_blocks/deconvolution/lm.R
   short_name: LM

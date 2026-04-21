@@ -1,7 +1,7 @@
 
 
 # nnls :  #must be a unique ID
-#   path: decovolution/nnls.R
+#   path: function_blocks/decovolution/nnls.R
 #   short_name: NNLS
 #   input:
 #     RNA: 0
@@ -12,6 +12,6 @@
 #     scRNA: 0
 
 concatscale:
-  path: early_integration/concat_scale.R 
+  path: function_blocks/early_integration/concat_scale.R 
   short_name: Consc
   language: R

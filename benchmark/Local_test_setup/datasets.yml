@@ -47,3 +47,9 @@ insilicopseudobulk1 :
 #   short_name : SDC5
 #   groundtruth_file_path : data/groundtruth2_insilicodirichletCopule_pdac.h5
 #   path : data/mixes2_insilicodirichletCopule_pdac.h5 
+
+
+insilicodirichletNoDep4CTsource1 : 
+  short_name : SDN4
+  groundtruth_file_path : data/groundtruth1_insilicodirichletNoDep4CTsource_pdac.h5
+  path : data/mixes1_insilicodirichletNoDep4CTsource_pdac.h5 

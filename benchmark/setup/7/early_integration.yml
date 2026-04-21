@@ -1,7 +1,7 @@
 
 
 # nnls :  #must be a unique ID
-#   path: decovolution/nnls.R
+#   path: function_blocks/decovolution/nnls.R
 #   short_name: NNLS
 #   input:
 #     RNA: 0

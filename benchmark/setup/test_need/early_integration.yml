@@ -1,8 +1,8 @@
 # OnlyMet: 
-#   path: early_integration/only_met.R 
+#   path: function_blocks/early_integration/only_met.R 
 #   short_name: OMet
 
 # OnlyRna: 
-#   path: early_integration/only_rna.R 
+#   path: function_blocks/early_integration/only_rna.R 
 #   short_name: ORNA
 

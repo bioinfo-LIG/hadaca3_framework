@@ -1,8 +1,38 @@
 
 nnls :  #must be a unique ID
-  path: deconvolution/nnls.R
+  path: function_blocks/deconvolution/nnls.R
   short_name: NNLS
 
 lm :  #must be a unique ID
-  path: deconvolution/lm.R
+  path: function_blocks/deconvolution/lm.R
   short_name: LM
+
+
+
+ 
+# InstaPrism :  #must be a unique ID
+#   path: function_blocks/deconvolution/InstaPrism.R
+#   short_name: InstaPrism
+#   omic:  [RNA]
+  
+# fardeep :  #must be a unique ID
+#   path: function_blocks/deconvolution/fardeep.R
+#   short_name: FARDEEP
+#   omic:  [RNA]
+
+# cibersort :  #must be a unique ID
+#   path: function_blocks/deconvolution/cibersort.R
+#   short_name: CIBERSORT
+#   omic:  [RNA]
+
+
+# DWLS :  #must be a unique ID
+#   path: function_blocks/deconvolution/DWLS.R
+#   short_name: DWLS
+#   omic: [RNA]
+  
+
+# MuSiC :  #must be a unique ID
+#   path: function_blocks/deconvolution/MuSiC.R
+#   short_name: MuSiC
+#   omic: [RNA]
