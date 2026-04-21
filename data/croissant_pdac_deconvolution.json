@@ -50,6 +50,7 @@
   "name": "HADACA3_PDAC_MultiOmics_Deconvolution_Benchmark",
   "description": "A benchmark dataset for cell-type deconvolution in pancreatic ductal adenocarcinoma (PDAC), released as part of the HADACA3 challenge. Includes RNA expression mixtures, DNA methylation mixtures, and paired ground-truth cell-type proportions for 24 pseudo-samples across 9 simulation scenarios (in silico Dirichlet with various dependency/source structures, pseudobulk, in vitro, in vivo), each replicated twice. Reference profiles are provided for bulk RNA-seq, methylation arrays, and single-cell RNA-seq (three independent PDAC cohorts: baron, peng, raghavan). Cell types: endothelial (endo), fibroblast (fibro), immune, classical PDAC (classic), basal-like PDAC (basal). Helper scripts for reading and writing all HDF5 files are provided in Python (data_processing.py, using h5py/anndata) and R (data_processing.R, using rhdf5/Matrix) at https://github.com/bioinfo-LIG/hadaca3_framework/tree/main/utils.",
   "version": "1.0.0",
+  "url":"https://zenodo.org/api/records/19677979/files-archive",
   "license": "https://creativecommons.org/licenses/by/4.0/",
   "creator": [
     {

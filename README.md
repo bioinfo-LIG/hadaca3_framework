@@ -169,6 +169,12 @@ wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/dat
 wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep6CTsource_pdac.h5
 wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletEMFAImmuneLowProp_pdac.h5
 wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/ref.h5
+
+
+
+# get all data from zenodo 
+curl -L -o files-archive.zip https://zenodo.org/api/records/19677979/files-archive
+unzip files-archive.zip
 ```
 
 
