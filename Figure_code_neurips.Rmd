@@ -1,0 +1,3338 @@
+---
+title: "HADACA3 Framework - Figure Neurips"
+subtitle: "Meta analysis"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_document:
+    self_contained: false
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+---
+
+
+
+```{r, echo=FALSE, eval=TRUE}
+knitr::opts_chunk$set(collapse=TRUE, comment = "#>", fig.width=12, fig.height=12, eval=TRUE, echo=TRUE, results="verbatim", dpi=75)
+```
+
+```{r re_loading_pckgs, echo=FALSE, message=FALSE}
+library(yaml)
+library(DT)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+theme_set(theme_light())
+library(wesanderson)
+library(RColorBrewer)
+library(plotly)
+library(fs)
+library(GGally)
+library(xtable)
+library(ComplexHeatmap)
+
+library(FactoMineR)
+
+library(furrr)
+# library(utils)
+
+
+# if(exists("utils_script")){
+#   source(utils_script)
+# }else{
+#   source("utils/data_processing.R")
+# }
+```
+
+```{r load_table}
+
+  weights_corrected = c(rep(1/4*1/2,2),
+                      rep(1/4*1/4,4),
+                      rep(1/4*1/4,4),
+                      rep(1/4*1/2,2))
+
+  metric_cols = c("pearson_row_norm","spearman_row_norm",
+                  "pearson_tot_norm","pearson_col_norm","spearman_tot_norm","spearman_col_norm",
+                  "rmse_norm","mae_norm","aitchison_norm","jsd_norm",
+                  "sdid_norm","aid_norm")
+
+weighgeomMean <- function(x) {
+  prod(mapply(function(a,b) a^b, a=x, b=weights_corrected), na.rm=T)^(1/sum(weights_corrected))
+}
+
+
+if(!exists("results_li")){
+  print("reading results li csv")
+  
+  all_functions_li = c(
+    'preprocessing_mixRNA', 'feature_selection_mixRNA',
+    'preprocessing_RNA', 'feature_selection_RNA',
+    'preprocessing_scRNA', 'feature_selection_scRNA', 'deconvolution_rna',
+    'preprocessing_mixMET', 'feature_selection_mixMET',
+    'preprocessing_MET', 'feature_selection_MET', 'deconvolution_met',
+    'late_integration'
+  )
+  results_li_all_dataset = rbind(
+    read.csv(file = gzfile("results_li_invitro_invivo_insilicopsuedobulk.csv.gz")),
+    read.csv(file = gzfile("results_li_EMFA_Copule_Immuneprop1.csv.gz")),
+    read.csv(file = gzfile("results_li_NODEP6_NODEP4_NODEP1.csv.gz"))
+  ) 
+  # results_li_all_dataset = read.csv(file = gzfile("../old_results_li_ei/results_li.csv.gz"))
+  results_li_all_dataset = results_li_all_dataset[-(results_li_all_dataset$dataset == "51847637672785"),]
+  results_li_all_dataset = results_li_all_dataset[!is.na(results_li_all_dataset$dataset),]
+  results_li_all_dataset = results_li_all_dataset[!is.na(results_li_all_dataset$feature_selection_mixRNA),]
+  
+  
+  results_li_all_dataset[all_functions_li] = lapply(results_li_all_dataset[all_functions_li], as.factor)
+  
+  results_li = results_li_all_dataset %>% 
+    filter(feature_selection_mixMET != "Toastnbfs") %>% 
+    group_by(
+      preprocessing_mixRNA, feature_selection_mixRNA,
+      preprocessing_RNA, feature_selection_RNA,
+      preprocessing_scRNA, feature_selection_scRNA, deconvolution_rna,
+      preprocessing_mixMET, feature_selection_mixMET,
+      preprocessing_MET, feature_selection_MET, deconvolution_met,
+      late_integration
+    ) %>% 
+    summarise(
+      across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+    ) %>% 
+    as.data.frame()
+
+  
+  results_li = results_li[!is.na(results_li$feature_selection_RNA),] # One NA
+  
+  results_li$score_aggreg= apply(   #_corrected 
+    results_li[, metric_cols],
+    1,weighgeomMean
+  )
+
+}
+
+if(!exists("results_ei")){
+  print("reading reulsts ei csv")
+  
+  all_functions_ei <- c(
+    'preprocessing_mixRNA', 'feature_selection_mixRNA',
+    'preprocessing_RNA', 'feature_selection_RNA',
+    'preprocessing_scRNA', 'feature_selection_scRNA',
+    'preprocessing_mixMET', 'feature_selection_mixMET',
+    'preprocessing_MET', 'feature_selection_MET',
+    'early_integration', 'deconvolution'
+  )
+  
+  results_ei_all_dataset = rbind(
+    read.csv(file = gzfile("results_ei_invitro_invivo_insilicopsuedobulk.csv.gz")),
+    read.csv(file = gzfile("results_ei_EMFA_Copule_Immuneprop1.csv.gz")),
+    read.csv(file = gzfile("results_ei_NODEP6_NODEP4_NODEP1.csv.gz"))
+  )  
+  # results_ei_all_dataset = read.csv(file = gzfile("../old_results_li_ei/merged_results_ei.csv.gz"))
+  
+  tmp = results_ei_all_dataset[results_ei_all_dataset$score_aggreg == 0,]
+  apply(tmp[,c("dataset", "ref", all_functions_ei)], 2, \(col_i){unique(col_i)})
+  # On a toutes les combinaisons possibles et tout les datasets, donc ce n'est pas liée à un truc en particulier 
+  # J'ai regardée le fichier 06, et on ne véréfie pas la somme à 1 mais on force bien à ce que tout les min soit à 1e-9
+  
+  
+  results_ei_all_dataset[all_functions_ei] <- lapply(results_ei_all_dataset[all_functions_ei], as.factor)
+
+  results_ei = results_ei_all_dataset %>% 
+    filter(feature_selection_mixMET != "Toastnbfs") %>% 
+    group_by(
+      preprocessing_mixRNA, feature_selection_mixRNA,
+      preprocessing_RNA, feature_selection_RNA,
+      preprocessing_scRNA, feature_selection_scRNA,
+      preprocessing_mixMET, feature_selection_mixMET,
+      preprocessing_MET, feature_selection_MET,
+      deconvolution, early_integration
+    ) %>% 
+    summarise(
+      across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+    ) %>% 
+    as.data.frame()
+  
+  
+  results_ei = results_ei[results_ei$score_aggreg != 0,]
+
+
+
+
+
+  # recompute corrected aggregated score
+  results_ei$score_aggreg= apply(   #_corrected 
+    results_ei[, metric_cols],
+    1,weighgeomMean
+  )
+
+}
+```
+
+
+```{r ei_levels_def}
+levels(factor(results_ei$preprocessing_RNA))
+levels(factor(results_ei$feature_selection_RNA))
+
+levels(factor(results_ei$preprocessing_scRNA))
+levels(factor(results_ei$feature_selection_scRNA))
+
+levels(factor(results_ei$preprocessing_MET))
+levels(factor(results_ei$feature_selection_MET))
+
+levels(factor(results_ei$early_integration))
+
+levels(factor(results_ei$deconvolution))
+
+
+results_ei$preprocessing_RNA = factor(results_ei$preprocessing_RNA, levels = c("ppID", "LogNorm", "Scale"))
+results_ei$feature_selection_RNA = factor(results_ei$feature_selection_RNA, levels = c("fsID", "SCcluster", "scpseudobulk", "Toastbulknbfs", "Toastvst"))
+results_ei$preprocessing_scRNA = factor(results_ei$preprocessing_scRNA, levels = c("ppID", "sccluster", "scConcat", "LogNorm", "Scale", "scbinarypseudobulklog"))
+results_ei$feature_selection_scRNA = factor(results_ei$feature_selection_scRNA, levels = c("fsID", "SCcluster", "scpseudobulk", "Toastbulknbfs", "Toastvst"))
+results_ei$preprocessing_MET = factor(results_ei$preprocessing_MET, levels = c("ppID", "LogNorm", "Scale"))
+results_ei$feature_selection_MET = factor(results_ei$feature_selection_MET, levels = c("fsID", "maxdiscriminant", "mostmethylated", "SPLSDA", "Toastpercent")) # , "Toastnbfs"
+results_ei$early_integration = factor(results_ei$early_integration, levels = c("concatnoscale", "concatscale", "Kernel", "omicade4bulk", "OT"))
+results_ei$deconvolution = factor(results_ei$deconvolution, levels = c("nnls", "lm", "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic"))
+```
+
+```{r li_levels_def}
+levels(factor(results_li$preprocessing_RNA))
+levels(factor(results_li$feature_selection_RNA))
+
+levels(factor(results_li$preprocessing_scRNA))
+levels(factor(results_li$feature_selection_scRNA))
+
+levels(factor(results_li$preprocessing_MET))
+levels(factor(results_li$feature_selection_MET))
+
+levels(factor(results_li$deconvolution_rna))
+levels(factor(results_li$deconvolution_met))
+
+levels(factor(results_li$late_integration))
+
+
+results_li$preprocessing_RNA = factor(results_li$preprocessing_RNA, levels = c("ppID", "LogNorm", "Scale", "nopp")) # , "CPM"
+results_li$feature_selection_RNA = factor(results_li$feature_selection_RNA, levels = c("fsID", "SCcluster",  "scpseudobulk", "Toastbulknbfs", "Toastvst", "nofs")) # , "scSPLSDA"
+results_li$preprocessing_scRNA = factor(results_li$preprocessing_scRNA, levels = c("ppID", "LogNorm", "Scale", "scbinarypseudobulklog", "sccluster", "scConcat", "nopp")) # , "CPM", "scCCAintegration", "scScale"
+results_li$feature_selection_scRNA = factor(results_li$feature_selection_scRNA, levels = c("fsID", "SCcluster",  "scpseudobulk", "Toastbulknbfs", "Toastvst", "nofs")) # , "scSPLSDA"
+results_li$preprocessing_MET = factor(results_li$preprocessing_MET, levels = c("ppID", "LogNorm", "Scale", "nopp")) # , "normalize"
+results_li$feature_selection_MET = factor(results_li$feature_selection_MET, levels = c("fsID", "maxdiscriminant", "mostmethylated", "SPLSDA", "Toastpercent", "nofs")) # , "Toastnbfs"
+results_li$deconvolution_rna = factor(results_li$deconvolution_rna, levels = c("nnls", "lm",  "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic", "node"))
+results_li$deconvolution_met = factor(results_li$deconvolution_met, levels = c("nnls", "lm",  "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic", "node"))
+results_li$late_integration = factor(results_li$late_integration, levels = c("limean", "TunedJ", "limeanRMSE", "OnlyMet", "OnlyRna")) # , "liCtSens"
+```
+
+
+```{r color_choices}
+
+# wes_palette("Royal2") # for modules
+module_pal = wes_palette("Royal2")[c(2, 3, 5, 4, 1)]
+names(module_pal) = c("preprocessing", "feature_selection", "deconvolution", "early_integration", "late_integration")
+
+
+
+
+# generated with Claude
+
+all_levels <- unique(c(
+  levels(results_ei$preprocessing_RNA),
+  levels(results_ei$feature_selection_RNA),
+  levels(results_ei$preprocessing_scRNA),
+  levels(results_ei$feature_selection_scRNA),
+  levels(results_ei$preprocessing_MET),
+  levels(results_ei$feature_selection_MET),
+  levels(results_ei$early_integration),
+  levels(results_ei$deconvolution),
+  levels(results_li$preprocessing_RNA),
+  levels(results_li$feature_selection_RNA),
+  levels(results_li$preprocessing_scRNA),
+  levels(results_li$feature_selection_scRNA),
+  levels(results_li$preprocessing_MET),
+  levels(results_li$feature_selection_MET),
+  levels(results_li$deconvolution_rna),
+  levels(results_li$deconvolution_met),
+  levels(results_li$late_integration)
+))
+
+id_levels    <- all_levels[grepl(c("ID"), all_levels) | grepl(c("nopp"), all_levels) | grepl(c("nofs"), all_levels) | grepl(c("node"), all_levels) | grepl(c("OnlyRna"), all_levels) | grepl(c("OnlyMet"), all_levels)]
+other_levels <- all_levels[!(grepl(c("ID"), all_levels) | grepl(c("nopp"), all_levels) | grepl(c("nofs"), all_levels) | grepl(c("node"), all_levels))]
+n_other <- length(other_levels)
+
+palette_colors <- colorRampPalette(
+  c(brewer.pal(7, "Set2"),
+    brewer.pal(7, "Dark2"),
+    brewer.pal(8, "Set3"))
+)(n_other)
+
+
+level_colors <- c(
+  setNames(rep("grey60", length(id_levels)), id_levels),
+  setNames(palette_colors, other_levels)
+)
+
+# # Verification
+# scales::show_col(level_colors, ncol = 6)
+# print(level_colors)
+```
+
+
+
+
+
+
+# Top methods
+
+
+## Overall EI top 10 method by median of the aggregated score
+
+```{r results_ei_top10}
+results_ei_top10 = results_ei %>%
+  group_by(preprocessing_mixRNA, feature_selection_mixRNA, 
+           preprocessing_RNA, feature_selection_RNA, 
+           # preprocessing_scRNA, feature_selection_scRNA, 
+           preprocessing_mixMET,feature_selection_mixMET, 
+           preprocessing_MET, feature_selection_MET,  
+           early_integration, deconvolution, .groups = "keep") %>% 
+  summarise(GlobalScore = median(score_aggreg)) %>%
+  arrange(desc(GlobalScore))
+
+
+datatable(results_ei_top10[1:10,])
+xtable(results_ei_top10[1:10,-c(1,2,7,8,11)], digits = 5)
+```
+
+## Overall LI top 10 method by median of the aggregated score
+
+```{r results_li_top10}
+results_li_top10 = results_li %>%
+  group_by(preprocessing_mixRNA, feature_selection_mixRNA, 
+           preprocessing_RNA, feature_selection_RNA, 
+           preprocessing_scRNA, feature_selection_scRNA, deconvolution_rna, 
+           preprocessing_mixMET,feature_selection_mixMET, 
+           preprocessing_MET, feature_selection_MET, deconvolution_met, 
+           late_integration, .groups = "keep") %>% 
+  summarise(GlobalScore = median(score_aggreg)) %>%
+  arrange(desc(GlobalScore))
+
+# LiCtSens == limean
+# No methods use single-cell so repetition occurs
+results_li_top10 = results_li_top10[results_li_top10$late_integration != "liCtSens",]
+datatable(results_li_top10[c(1,10,19,26:50),-c(14)])
+xtable(results_li_top10[c(1,10,19,28,37,55,64,73,82, 91),-c(1,2,8,9,14)], digits = 6)
+
+# before group_by and mean by dataset
+# datatable(results_li_top10[c(1,3,4,7,9,11,16,21,26,29),-c(14)])
+# xtable(results_li_top10[c(1,3,4,7,9,11,16,21,26,29),-c(1,2,8,9,14)], digits = 6)
+```
+
+
+## By variables
+
+### violin plot
+
+```{r fun_arranged_boxplot}
+arranged_violinplot = function(data, x_var, inte, score = "score_aggreg", module_palette = module_pal, level_palette = level_colors){
+  
+  if (x_var != "early_integration" && x_var != "early_integration") {
+    data = data[data$preprocessing_mixRNA != "nopp",]
+    data = data[data$feature_selection_mixRNA != "nofs",]
+    data = data[data$preprocessing_RNA != "nopp",]
+    data = data[data$feature_selection_RNA != "nofs",]
+    data = data[data$preprocessing_scRNA != "nopp",]
+    data = data[data$feature_selection_scRNA != "nofs",]
+    data = data[data$preprocessing_mixMET != "nopp",]
+    data = data[data$feature_selection_mixMET != "nofs",]
+    data = data[data$preprocessing_MET != "nopp",]
+    data = data[data$feature_selection_MET != "nofs",]
+  }
+  
+  search_module = which(sapply(names(module_palette), \(module_i){grepl(module_i, x = x_var)}) == 1) 
+  color_module = module_pal[search_module]
+  
+  
+  order_level_x_var = sapply(levels(data[,x_var]), \(level_i){
+    median(data[data[,x_var] == level_i, score], na.rm = TRUE)
+  })
+  # if we look at mae, we want to look at the minimum, otherwise (score aggreg and cor) the max
+  order_level_x_var = order_level_x_var[order(order_level_x_var, decreasing = !(score == "mae"))]
+  data[,x_var] = factor(data[,x_var], levels = names(order_level_x_var))
+  
+  
+  print(car::leveneTest(y = data[,score], data[,x_var]))
+  
+  
+  aes_base = aes_string(x = x_var, y = score, fill = x_var)
+  aes_base_median = aes_string(
+    x = x_var, 
+    y = sapply(levels(data[,x_var]), \(level_i){
+      median(data[data[,x_var] == level_i, score])
+    })
+  )
+  ggplot(data[,c(x_var, score)]) +
+    # geom_boxplot(aes_base) +
+    geom_violin(aes_base, draw_quantiles = 0.5) +
+    # median point manually displayed
+    stat_summary(aes_base, fun = median, geom = "point", shape = "-", size = 5, color = "red") + 
+    ylim(0, 1) +
+    labs(
+      title = paste("Aggregated score for", x_var), #, "within early integration strategies"
+      subtitle = paste("within", inte, "integration strategies"), # "ordered by median of aggregated score (red horizontal line)",
+      x = element_blank(),
+      y = "Aggregated score",
+    ) +
+    scale_fill_manual(
+      values = level_palette[levels(data[,x_var])]
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      panel.border = element_rect(color = color_module, fill = NA, linewidth = 3),
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5),
+      legend.position = "none" # "bottom"
+    )
+  
+}
+
+
+arranged_violinplot(data = results_li, x_var = all_functions_li[1], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[2], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[3], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[4], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[5], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[6], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[7], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[8], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[9], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[10], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[11], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[12], inte = "late")
+arranged_violinplot(data = results_li, x_var = all_functions_li[13], inte = "late")
+
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[1], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[2], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[3], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[4], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[5], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[6], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[7], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[8], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[9], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[10], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[11], inte = "early")
+arranged_violinplot(data = results_ei, x_var = all_functions_ei[12], inte = "early")
+```
+
+
+### Modules matrices
+
+#### Late_integration
+
+```{r modules_matrices}
+
+col_fun = circlize::colorRamp2(
+  c(-0.075, -0.025, 0, 0.025, 0.075),
+  # wes_palette("Zissou1")[1:5]
+  # c("blue", "white", "red")
+  RColorBrewer::brewer.pal(5, "RdBu")[5:1]
+)
+
+
+## Overall LI median score
+overall_median_li_score_aggreg = median(results_li$score_aggreg, na.rm = TRUE) # = 0.6824578
+
+
+
+### Preprocessing
+results_li %>% 
+  group_by(preprocessing_RNA, preprocessing_MET) %>% 
+  summarise(n = n(), median = median(score_aggreg)) %>% print(n = 25)
+
+med_score_aggr_PP = matrix(
+  data = c(
+    results_li %>% 
+      group_by(preprocessing_RNA, preprocessing_MET) %>% 
+      summarise(median = median(score_aggreg)) %>% 
+      pull(median) - overall_median_li_score_aggreg,
+    NA # Since there is no nopp/nopp combination 
+  ),
+  byrow = TRUE, # Methylation is in columns
+  nrow = length(levels(results_li$preprocessing_RNA)),
+  ncol = length(levels(results_li$preprocessing_MET)),
+  dimnames = list(
+    levels(results_li$preprocessing_RNA),
+    levels(results_li$preprocessing_MET)
+  )
+)
+
+
+Heatmap(
+  med_score_aggr_PP[-nrow(med_score_aggr_PP), -ncol(med_score_aggr_PP)],
+  name = "median aggr score",
+  col = col_fun,
+  column_title = "Preprocessing MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Preprocessing RNA",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  # row_split = c(1,1,1,1,2),
+  # column_split = c(1,1,1,1,2),
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  # border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+### Feature selection
+results_li %>% 
+  group_by(feature_selection_RNA, feature_selection_MET) %>% 
+  summarise(n = n(), median = median(score_aggreg)) %>% print(n = 25)
+
+med_score_aggr_FS = matrix(
+  data = c(
+    results_li %>% 
+      group_by(feature_selection_RNA, feature_selection_MET) %>% 
+      summarise(median = median(score_aggreg)) %>% 
+      pull(median) - overall_median_li_score_aggreg,
+    NA # Since there is no nopp/nopp combination 
+  ),
+  byrow = TRUE, # Methylation is in columns
+  nrow = length(levels(results_li$feature_selection_RNA)),
+  ncol = length(levels(results_li$feature_selection_MET)),
+  dimnames = list(
+    levels(results_li$feature_selection_RNA),
+    levels(results_li$feature_selection_MET)
+  )
+)
+
+
+Heatmap(
+  med_score_aggr_FS[-nrow(med_score_aggr_FS), -ncol(med_score_aggr_FS)],
+  name = "fsID",
+  col = col_fun,
+  column_title = "Feature selecion MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Feature selecion RNA",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  # row_split = c(1,1,1,2),
+  # column_split = c(1,2),
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  # border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+### Deconvolution
+results_li %>% 
+  group_by(deconvolution_rna, deconvolution_met) %>% 
+  summarise(n = n(), median = median(score_aggreg)) %>% print(n = 25)
+
+med_score_aggr_deconv = matrix(
+  data = c(
+    results_li %>% 
+      group_by(deconvolution_rna, deconvolution_met) %>% 
+      summarise(median = median(score_aggreg)) %>% 
+      pull(median) - overall_median_li_score_aggreg,
+    NA # Since there is no nopp/nopp combination 
+  ),
+  byrow = TRUE, # Methylation is in columns
+  nrow = length(levels(results_li$deconvolution_rna)),
+  ncol = length(levels(results_li$deconvolution_met)),
+  dimnames = list(
+    levels(results_li$deconvolution_rna),
+    levels(results_li$deconvolution_met)
+  )
+)
+
+
+Heatmap(
+  med_score_aggr_deconv[-nrow(med_score_aggr_deconv), -ncol(med_score_aggr_deconv)],
+  name = "median aggr score",
+  col = col_fun,
+  column_title = "Deconvolution MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Deconvolution RNA",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  # row_split = c(1,1,1,1,1,1,1,2),
+  # column_split = c(1,1,1,1,1,1,1,2),
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  # border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# style anova
+rmv_only_RNA_onlyMET = c(-4,-5)
+
+med_score_aggr_PP_RNA_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, preprocessing_RNA) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$preprocessing_RNA))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$preprocessing_RNA)[-length(levels(results_li$preprocessing_RNA))]
+  )
+)
+
+
+med_score_aggr_PP_SCRNA_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, preprocessing_scRNA) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$preprocessing_scRNA))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$preprocessing_scRNA)[-length(levels(results_li$preprocessing_scRNA))]
+  )
+)
+
+
+med_score_aggr_PP_MET_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, preprocessing_MET) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$preprocessing_MET))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$preprocessing_MET)[-length(levels(results_li$preprocessing_MET))]
+  )
+)
+
+
+
+
+
+med_score_aggr_FS_RNA_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, feature_selection_RNA) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$feature_selection_RNA))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$feature_selection_RNA)[-length(levels(results_li$feature_selection_RNA))]
+  )
+)
+
+
+med_score_aggr_FS_SCRNA_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, feature_selection_scRNA) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$feature_selection_scRNA))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$feature_selection_scRNA)[-length(levels(results_li$feature_selection_scRNA))]
+  )
+)
+
+
+med_score_aggr_FS_MET_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, feature_selection_MET) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$feature_selection_MET))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$feature_selection_MET)[-length(levels(results_li$feature_selection_MET))]
+  )
+)
+
+
+
+
+
+med_score_aggr_deconv_RNA_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, deconvolution_rna) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$deconvolution_rna))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$deconvolution_rna)[-length(levels(results_li$deconvolution_rna))]
+  )
+)
+
+
+med_score_aggr_deconv_MET_LI = matrix(
+  data = results_li %>% 
+    group_by(late_integration, deconvolution_met) %>% 
+    filter(late_integration != "OnlyRna", late_integration != "OnlyMet") %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_li_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_li$late_integration)[rmv_only_RNA_onlyMET]),
+  ncol = length(levels(results_li$deconvolution_met))-1,
+  dimnames = list(
+    levels(results_li$late_integration)[rmv_only_RNA_onlyMET],
+    levels(results_li$deconvolution_met)[-length(levels(results_li$deconvolution_met))]
+  )
+)
+
+
+
+
+
+
+col_fun = circlize::colorRamp2(
+  c(min(c(med_score_aggr_PP_RNA_LI, med_score_aggr_PP_SCRNA_LI, med_score_aggr_PP_MET_LI, med_score_aggr_FS_RNA_LI, med_score_aggr_FS_SCRNA_LI, med_score_aggr_FS_MET_LI, med_score_aggr_deconv_RNA_LI, med_score_aggr_deconv_MET_LI), na.rm = TRUE),
+    0, 
+    max(c(med_score_aggr_PP_RNA_LI, med_score_aggr_PP_SCRNA_LI, med_score_aggr_PP_MET_LI, med_score_aggr_FS_RNA_LI, med_score_aggr_FS_SCRNA_LI, med_score_aggr_FS_MET_LI, med_score_aggr_deconv_RNA_LI, med_score_aggr_deconv_MET_LI), na.rm = TRUE)),
+  c("#2166ac", "#f7f7f7", "#b2182b")
+)
+
+
+
+
+
+ht_PP_rna = Heatmap(
+  med_score_aggr_PP_RNA_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "PP RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_scrna = Heatmap(
+  med_score_aggr_PP_SCRNA_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "PP scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_met = Heatmap(
+  med_score_aggr_PP_MET_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "PP MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_rna = Heatmap(
+  med_score_aggr_FS_RNA_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "FS RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_scrna = Heatmap(
+  med_score_aggr_FS_SCRNA_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "FS scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_met = Heatmap(
+  med_score_aggr_FS_MET_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "FS MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_deconv_rna = Heatmap(
+  med_score_aggr_deconv_RNA_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "Deconv RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_deconv_met = Heatmap(
+  med_score_aggr_deconv_MET_LI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "Deconv MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+ht_list = ht_PP_rna + ht_PP_met + ht_FS_rna + ht_FS_met + ht_deconv_rna + ht_deconv_met # + ht_PP_scrna + ht_FS_scrna 
+
+draw(ht_list, 
+     column_title = "Blocks interactions with late integration",
+     column_title_gp = gpar(fontsize = 16, fontface = "bold"),
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right")
+```
+
+#### Early_integration
+
+```{r modules_matrices}
+
+col_fun = circlize::colorRamp2(
+  c(-0.075, -0.025, 0, 0.025, 0.075),
+  # wes_palette("Zissou1")[1:5]
+  # c("blue", "white", "red")
+  RColorBrewer::brewer.pal(5, "RdBu")[5:1]
+)
+
+
+## Overall EI median score
+overall_median_ei_score_aggreg = median(results_ei$score_aggreg) # = 0.5460786
+
+
+### Preprocessing
+results_ei %>% 
+  group_by(preprocessing_RNA, preprocessing_MET) %>% 
+  summarise(n = n(), median = median(score_aggreg)) %>% print(n = 25)
+
+med_score_aggr_PP = matrix(
+  data = c(
+    results_ei %>% 
+      group_by(preprocessing_RNA, preprocessing_MET) %>% 
+      summarise(median = median(score_aggreg)) %>% 
+      pull(median) - overall_median_ei_score_aggreg,
+    NA # Since there is no nopp/nopp combination 
+  ),
+  byrow = TRUE, # Methylation is in columns
+  nrow = length(levels(results_ei$preprocessing_RNA)),
+  ncol = length(levels(results_ei$preprocessing_MET)),
+  dimnames = list(
+    levels(results_ei$preprocessing_RNA),
+    levels(results_ei$preprocessing_MET)
+  )
+)
+
+
+Heatmap(
+  med_score_aggr_PP,
+  name = "median aggr score",
+  # title = "Omcis preprocessing comparison on median aggregated score for early inte",
+  col = col_fun,
+  column_title = "Preprocessing MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Preprocessing RNA",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  # border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+### Feature selection
+results_ei %>% 
+  group_by(feature_selection_RNA, feature_selection_MET) %>% 
+  summarise(n = n(), median = median(score_aggreg)) %>% print(n = 25)
+
+med_score_aggr_FS = matrix(
+  data = c(
+    results_ei %>% 
+      group_by(feature_selection_RNA, feature_selection_MET) %>% 
+      summarise(median = median(score_aggreg)) %>% 
+      pull(median) - overall_median_ei_score_aggreg,
+    NA # Since there is no nopp/nopp combination 
+  ),
+  byrow = TRUE, # Methylation is in columns
+  nrow = length(levels(results_ei$feature_selection_RNA)),
+  ncol = length(levels(results_ei$feature_selection_MET)),
+  dimnames = list(
+    levels(results_ei$feature_selection_RNA),
+    levels(results_ei$feature_selection_MET)
+  )
+)
+
+
+Heatmap(
+  med_score_aggr_FS,
+  name = "median aggr score",
+  col = col_fun,
+  column_title = "Feature selecion MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Feature selecion RNA",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  # row_split = c(1,1,1,2),
+  # column_split = c(1,2),
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  # border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+
+
+
+
+
+
+
+
+# style anova
+
+med_score_aggr_PP_RNA_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, preprocessing_RNA) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$preprocessing_RNA)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$preprocessing_RNA)
+  )
+)
+
+
+med_score_aggr_PP_SCRNA_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, preprocessing_scRNA) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$preprocessing_scRNA)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$preprocessing_scRNA)
+  )
+)
+
+
+med_score_aggr_PP_MET_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, preprocessing_MET) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$preprocessing_MET)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$preprocessing_MET)
+  )
+)
+
+
+
+
+
+med_score_aggr_FS_RNA_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, feature_selection_RNA) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$feature_selection_RNA)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$feature_selection_RNA)
+  )
+)
+
+
+med_score_aggr_FS_SCRNA_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, feature_selection_scRNA) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$feature_selection_scRNA)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$feature_selection_scRNA)
+  )
+)
+
+
+med_score_aggr_FS_MET_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, feature_selection_MET) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$feature_selection_MET)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$feature_selection_MET)
+  )
+)
+
+
+
+
+
+med_score_aggr_deconv_EI = matrix(
+  data = results_ei %>% 
+    group_by(early_integration, deconvolution) %>% 
+    summarise(median = median(score_aggreg)) %>% 
+    pull(median) - overall_median_ei_score_aggreg,
+  byrow = TRUE, 
+  nrow = length(levels(results_ei$early_integration)),
+  ncol = length(levels(results_ei$deconvolution)),
+  dimnames = list(
+    levels(results_ei$early_integration),
+    levels(results_ei$deconvolution)
+  )
+)
+
+
+
+
+
+
+col_fun = circlize::colorRamp2(
+  c(min(c(med_score_aggr_PP_RNA_EI, med_score_aggr_PP_SCRNA_EI, med_score_aggr_PP_MET_EI, med_score_aggr_FS_RNA_EI, med_score_aggr_FS_SCRNA_EI, med_score_aggr_FS_MET_EI, med_score_aggr_deconv_EI), na.rm = TRUE),
+    0, 
+    max(c(med_score_aggr_PP_RNA_EI, med_score_aggr_PP_SCRNA_EI, med_score_aggr_PP_MET_EI, med_score_aggr_FS_RNA_EI, med_score_aggr_FS_SCRNA_EI, med_score_aggr_FS_MET_EI, med_score_aggr_deconv_EI), na.rm = TRUE)),
+  c("#2166ac", "#f7f7f7", "#b2182b")
+)
+
+
+
+
+
+ht_PP_rna = Heatmap(
+  med_score_aggr_PP_RNA_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "PP RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  # cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_scrna = Heatmap(
+  med_score_aggr_PP_SCRNA_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "PP scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la dupeication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_met = Heatmap(
+  med_score_aggr_PP_MET_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "PP MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la dupeication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_rna = Heatmap(
+  med_score_aggr_FS_RNA_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "FS RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la dupeication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_scrna = Heatmap(
+  med_score_aggr_FS_SCRNA_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "FS scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la dupeication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_met = Heatmap(
+  med_score_aggr_FS_MET_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "FS MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la dupeication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_deconv = Heatmap(
+  med_score_aggr_deconv_EI,
+  name = "Diff median aggr score",
+  col = col_fun,
+  column_title = "Deconv",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  # cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la dupeication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+ht_list = ht_PP_rna + ht_PP_met + ht_FS_rna + ht_FS_met + ht_deconv #  + ht_PP_scrna + ht_FS_scrna
+
+draw(ht_list, 
+     column_title = "Blocks interactions with early integration",
+     column_title_gp = gpar(fontsize = 16, fontface = "bold"),
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right")
+```
+
+
+### Anova
+
+#### Late_integration
+
+```{r anova_k_factor_and_interaction}
+# First factor will be the baseline
+
+
+all_functions_li_without_mix = all_functions_li[c(3:7,10:13)] # to avoid repetition
+stats::anova(lm(score_aggreg ~ ., data = results_li[,c("score_aggreg", all_functions_li_without_mix)]))
+mod = lm(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + deconvolution_rna + preprocessing_MET + feature_selection_MET + deconvolution_met + late_integration)^2, data = results_li[,c("score_aggreg", all_functions_li_without_mix)])
+stats::anova(mod)
+summary(mod)
+
+
+### doesn't work: too much row
+# marg = emmeans::emmeans(mod, ~ preprocessing_RNA:deconvolution_rna)
+# pairs(marg, adjust = "tukey")
+
+interaction.plot(x.factor = results_li$preprocessing_RNA, 
+                 trace.factor = results_li$deconvolution_rna, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$preprocessing_RNA, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_li$feature_selection_RNA, 
+                 trace.factor = results_li$deconvolution_rna, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$feature_selection_RNA, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+
+
+interaction.plot(x.factor = results_li$preprocessing_scRNA, 
+                 trace.factor = results_li$deconvolution_rna, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$preprocessing_scRNA, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_li$feature_selection_scRNA, 
+                 trace.factor = results_li$deconvolution_rna, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$feature_selection_scRNA, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+
+interaction.plot(x.factor = results_li$preprocessing_MET, 
+                 trace.factor = results_li$deconvolution_met, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$preprocessing_MET, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_li$feature_selection_MET, 
+                 trace.factor = results_li$deconvolution_met, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$feature_selection_MET, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+
+
+interaction.plot(x.factor = results_li$deconvolution_rna, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_li$deconvolution_met, 
+                 trace.factor = results_li$late_integration, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_li$deconvolution_rna, 
+                 trace.factor = results_li$deconvolution_met, 
+                 response = results_li$score_aggreg,
+                 type = "b")
+
+### TukeyHSD: not very usefull because it's at the factor level for each feature
+# TukeyHSD(aov(score_aggreg ~ ., data = results_li[,c("score_aggreg", all_functions_li_without_mix)]))
+# plot(TukeyHSD(aov(score_aggreg ~ ., data = results_li[,c("score_aggreg", all_functions_li_without_mix)])))
+# 
+# Tukey_mod = TukeyHSD(aov(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + deconvolution_rna + preprocessing_MET + deconvolution_met + late_integration)^2, data = results_li[,c("score_aggreg", all_functions_li_without_mix)]))
+# plot(Tukey_mod)
+```
+
+#### Early_integration
+
+```{r anova_k_factor_and_interaction}
+# First factor will be the baseline
+
+
+all_functions_ei_without_mix = all_functions_ei[c(3:6,9:12)] # to avoid repetition
+stats::anova(lm(score_aggreg ~ ., data = results_ei[,c("score_aggreg", all_functions_ei_without_mix)]))
+mod = lm(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + preprocessing_MET + feature_selection_MET + early_integration + deconvolution)^2, data = results_ei[,c("score_aggreg", all_functions_ei_without_mix)])
+stats::anova(mod)
+summary(mod)
+
+
+### doesn't work: too much row
+# marg = emmeans::emmeans(mod, ~ preprocessing_RNA:deconvolution_rna)
+# pairs(marg, adjust = "tukey")
+
+interaction.plot(x.factor = results_ei$preprocessing_RNA, 
+                 trace.factor = results_ei$deconvolution_rna, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$preprocessing_RNA, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_ei$feature_selection_RNA, 
+                 trace.factor = results_ei$deconvolution_rna, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$feature_selection_RNA, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+
+
+interaction.plot(x.factor = results_ei$preprocessing_scRNA, 
+                 trace.factor = results_ei$deconvolution_rna, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$preprocessing_scRNA, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_ei$feature_selection_scRNA, 
+                 trace.factor = results_ei$deconvolution_rna, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$feature_selection_scRNA, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+
+interaction.plot(x.factor = results_ei$preprocessing_MET, 
+                 trace.factor = results_ei$deconvolution_met, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$preprocessing_MET, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_ei$feature_selection_MET, 
+                 trace.factor = results_ei$deconvolution_met, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$feature_selection_MET, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+
+
+interaction.plot(x.factor = results_ei$deconvolution_rna, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+interaction.plot(x.factor = results_ei$deconvolution_met, 
+                 trace.factor = results_ei$early_integration, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+interaction.plot(x.factor = results_ei$deconvolution_rna, 
+                 trace.factor = results_ei$deconvolution_met, 
+                 response = results_ei$score_aggreg,
+                 type = "b")
+
+### TukeyHSD: not very usefull because it's at the factor level for each feature
+# TukeyHSD(aov(score_aggreg ~ ., data = results_ei[,c("score_aggreg", all_functions_ei_without_mix)]))
+# plot(TukeyHSD(aov(score_aggreg ~ ., data = results_ei[,c("score_aggreg", all_functions_ei_without_mix)])))
+# 
+# Tukey_mod = TukeyHSD(aov(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + deconvolution_rna + preprocessing_MET + deconvolution_met + early_integration)^2, data = results_ei[,c("score_aggreg", all_functions_ei_without_mix)]))
+# plot(Tukey_mod)
+```
+
+
+### Complex Heatmap anova
+
+#### Late_integration
+
+```{r integration_interaction_plot}
+library(tibble)
+
+all_functions_li_without_mix = all_functions_li[c(3:7,10:13)] # to avoid repetition
+mod = lm(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + deconvolution_rna + preprocessing_MET + feature_selection_MET + deconvolution_met + late_integration)^2, data = results_li[,c("score_aggreg", all_functions_li_without_mix)])
+
+mod$coefficients[!is.na(mod$coefficients)]
+
+
+
+## Model
+
+# First model for integration strategie
+anova_results = stats::anova(mod) %>%
+  as.data.frame() %>%
+  rownames_to_column("interaction")
+
+# then two model only for each uni-omic strategie
+mod_only_RNA = lm(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + deconvolution_rna)^2, data = results_li[results_li$late_integration == "OnlyRna",c("score_aggreg", all_functions_li_without_mix)])
+# anova_results_only_RNA = stats::anova(mod_only_RNA) %>%
+#   as.data.frame() %>%
+#   rownames_to_column("interaction")
+
+mod_only_MET = lm(score_aggreg ~ (preprocessing_MET + deconvolution_met)^2, data = results_li[results_li$late_integration == "OnlyMet",c("score_aggreg", all_functions_li_without_mix)]) # feature_selection_MET have only fsID
+# anova_results_only_MET = stats::anova(mod_only_MET) %>%
+#   as.data.frame() %>%
+#   rownames_to_column("interaction")
+
+
+
+
+## Heatmap
+
+vars_x = c("deconvolution_rna", "deconvolution_met", "preprocessing_RNA", "feature_selection_RNA", "preprocessing_MET", "preprocessing_scRNA", "feature_selection_scRNA")
+vars_y = "late_integration"
+
+
+
+mod_summary = summary(mod)
+coef_df = as.data.frame(mod_summary$coefficients) %>%
+  rownames_to_column("term")
+
+coef_filtered = coef_df %>%
+  filter(
+    str_detect(term, "late_integration") & str_detect(term, paste(vars_x, collapse = "|"))
+  ) %>%
+  rename(
+    pvalue   = `Pr(>|t|)`
+  ) %>%
+  mutate(
+    omic_type = case_when(
+      str_detect(term, "deconvolution_rna") ~ "RNA",
+      str_detect(term, "deconvolution_met") ~ "MET",
+      str_detect(term, "preprocessing_RNA") ~ "RNA",
+      str_detect(term, "preprocessing_MET") ~ "MET",
+      str_detect(term, "preprocessing_scRNA") ~ "scRNA",
+      str_detect(term, "feature_selection_RNA") ~ "RNA",
+      str_detect(term, "feature_selection_MET") ~ "MET",
+      str_detect(term, "feature_selection_scRNA") ~ "scRNA",
+    ),
+    PP_method = case_when(
+      str_detect(term, "preprocessing_RNA") ~ 
+        str_extract(term, "(?<=preprocessing_RNA)[^:]+"),
+      str_detect(term, "preprocessing_scRNA") ~ 
+        str_extract(term, "(?<=preprocessing_scRNA)[^:]+"),
+      str_detect(term, "preprocessing_MET") ~ 
+        str_extract(term, "(?<=preprocessing_MET)[^:]+")
+    ),
+    FS_method = case_when(
+      str_detect(term, "feature_selection_RNA") ~ 
+        str_extract(term, "(?<=feature_selection_RNA)[^:]+"),
+      str_detect(term, "feature_selection_scRNA") ~ 
+        str_extract(term, "(?<=feature_selection_scRNA)[^:]+"),
+      str_detect(term, "feature_selection_MET") ~ 
+        str_extract(term, "(?<=feature_selection_MET)[^:]+")
+    ),
+    # Extraire la modalité de deconvolution (après "deconvolution_rna" ou "deconvolution_met")
+    deconv_method = case_when(
+      str_detect(term, "deconvolution_rna") ~ 
+        str_extract(term, "(?<=deconvolution_rna)[^:]+"),
+      str_detect(term, "deconvolution_met") ~ 
+        str_extract(term, "(?<=deconvolution_met)[^:]+")
+    ),
+    # Extraire la modalité de late_integration (après "late_integration")
+    late_int_method = str_extract(term, "(?<=late_integration).+$") %>%
+      str_remove("^:") %>%  # enlever le ":" au début si présent
+      str_remove(":deconvolution_(rna|met).*$")  # enlever la partie deconvolution à la fin
+  )
+  # mutate(
+  #   deconv_label = paste0(deconv_method, "\n(", omic_type, ")"),
+  #   pvalue_signif = pvalue < 0.05
+  # )
+
+
+
+
+
+mod_summary_only_RNA = summary(mod_only_RNA)
+coef_df_only_RNA = as.data.frame(mod_summary_only_RNA$coefficients) %>%
+  rownames_to_column("term")
+# add late_integrationOnlyRna: to base levels
+coef_df_only_RNA[2:20,"term"] = paste0("late_integrationOnlyRna:", coef_df_only_RNA[2:20,"term"])
+
+coef_filtered_only_RNA = coef_df_only_RNA %>%
+  filter(
+    str_detect(term, "late_integration") & str_detect(term, paste(vars_x, collapse = "|"))
+  ) %>%
+  rename(
+    pvalue   = `Pr(>|t|)`
+  ) %>%
+  mutate(
+    omic_type = case_when(
+      str_detect(term, "deconvolution_rna") ~ "RNA",
+      str_detect(term, "deconvolution_met") ~ "MET",
+      str_detect(term, "preprocessing_RNA") ~ "RNA",
+      str_detect(term, "preprocessing_MET") ~ "MET",
+      str_detect(term, "preprocessing_scRNA") ~ "scRNA",
+      str_detect(term, "feature_selection_RNA") ~ "RNA",
+      str_detect(term, "feature_selection_MET") ~ "MET",
+      str_detect(term, "feature_selection_scRNA") ~ "scRNA",
+    ),
+    PP_method = case_when(
+      str_detect(term, "preprocessing_RNA") ~ 
+        str_extract(term, "(?<=preprocessing_RNA)[^:]+"),
+      str_detect(term, "preprocessing_scRNA") ~ 
+        str_extract(term, "(?<=preprocessing_scRNA)[^:]+"),
+      str_detect(term, "preprocessing_MET") ~ 
+        str_extract(term, "(?<=preprocessing_MET)[^:]+")
+    ),
+    FS_method = case_when(
+      str_detect(term, "feature_selection_RNA") ~ 
+        str_extract(term, "(?<=feature_selection_RNA)[^:]+"),
+      str_detect(term, "feature_selection_scRNA") ~ 
+        str_extract(term, "(?<=feature_selection_scRNA)[^:]+"),
+      str_detect(term, "feature_selection_MET") ~ 
+        str_extract(term, "(?<=feature_selection_MET)[^:]+")
+    ),
+    # Extraire la modalité de deconvolution (après "deconvolution_rna" ou "deconvolution_met")
+    deconv_method = case_when(
+      str_detect(term, "deconvolution_rna") ~ 
+        str_extract(term, "(?<=deconvolution_rna)[^:]+"),
+      str_detect(term, "deconvolution_met") ~ 
+        str_extract(term, "(?<=deconvolution_met)[^:]+")
+    ),
+    late_int_method = "UniOmic (noLI)"
+  )
+
+
+
+mod_summary_only_MET = summary(mod_only_MET)
+coef_df_only_MET = as.data.frame(mod_summary_only_MET$coefficients) %>%
+  rownames_to_column("term")
+# add late_integrationOnlyRna: to base levels
+coef_df_only_MET[2:10,"term"] = paste0("late_integrationOnlyRna:", coef_df_only_MET[2:10,"term"])
+
+coef_filtered_only_MET = coef_df_only_MET %>%
+  filter(
+    str_detect(term, "late_integration") & str_detect(term, paste(vars_x, collapse = "|"))
+  ) %>%
+  rename(
+    pvalue   = `Pr(>|t|)`
+  ) %>%
+  mutate(
+    omic_type = case_when(
+      str_detect(term, "deconvolution_met") ~ "MET",
+      str_detect(term, "deconvolution_met") ~ "MET",
+      str_detect(term, "preprocessing_RNA") ~ "RNA",
+      str_detect(term, "preprocessing_MET") ~ "MET",
+      str_detect(term, "preprocessing_scRNA") ~ "scRNA",
+      str_detect(term, "feature_selection_RNA") ~ "RNA",
+      str_detect(term, "feature_selection_MET") ~ "MET",
+      str_detect(term, "feature_selection_scRNA") ~ "scRNA",
+    ),
+    PP_method = case_when(
+      str_detect(term, "preprocessing_RNA") ~ 
+        str_extract(term, "(?<=preprocessing_RNA)[^:]+"),
+      str_detect(term, "preprocessing_scRNA") ~ 
+        str_extract(term, "(?<=preprocessing_scRNA)[^:]+"),
+      str_detect(term, "preprocessing_MET") ~ 
+        str_extract(term, "(?<=preprocessing_MET)[^:]+")
+    ),
+    FS_method = case_when(
+      str_detect(term, "feature_selection_RNA") ~ 
+        str_extract(term, "(?<=feature_selection_RNA)[^:]+"),
+      str_detect(term, "feature_selection_scRNA") ~ 
+        str_extract(term, "(?<=feature_selection_scRNA)[^:]+"),
+      str_detect(term, "feature_selection_MET") ~ 
+        str_extract(term, "(?<=feature_selection_MET)[^:]+")
+    ),
+    # Extraire la modalité de deconvolution (après "deconvolution_met" ou "deconvolution_met")
+    deconv_method = case_when(
+      str_detect(term, "deconvolution_met") ~ 
+        str_extract(term, "(?<=deconvolution_met)[^:]+"),
+      str_detect(term, "deconvolution_met") ~ 
+        str_extract(term, "(?<=deconvolution_met)[^:]+")
+    ),
+    late_int_method = "UniOmic (noLI)"
+  )
+
+
+
+
+
+#  Since uni-omic strategies cannot be compared with integration strategies (because
+# they doesn't use the same baseline in the actual manner) it doesn't make sense to 
+# aggregate tables
+
+# coef_filtered = bind_rows(coef_filtered, coef_filtered_only_RNA, coef_filtered_only_MET)
+
+
+
+### RNA
+data_PP_rna = coef_filtered %>%
+  filter(omic_type == "RNA" & !(is.na(PP_method))) %>%
+  select(late_int_method, PP_method, Estimate, pvalue)
+
+mat_PP_rna_Estimate = data_PP_rna %>%
+  select(late_int_method, PP_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_PP_rna_pvalue = data_PP_rna %>%
+  select(late_int_method, PP_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+data_FS_rna = coef_filtered %>%
+  filter(omic_type == "RNA" & !(is.na(FS_method))) %>%
+  select(late_int_method, FS_method, Estimate, pvalue)
+
+mat_FS_rna_Estimate = data_FS_rna %>%
+  select(late_int_method, FS_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_FS_rna_pvalue = data_FS_rna %>%
+  select(late_int_method, FS_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+data_deconv_rna = coef_filtered %>%
+  filter(omic_type == "RNA" & !(is.na(deconv_method))) %>%
+  select(late_int_method, deconv_method, Estimate, pvalue)
+
+mat_deconv_rna_Estimate = data_deconv_rna %>%
+  select(late_int_method, deconv_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = deconv_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_deconv_rna_pvalue = data_deconv_rna %>%
+  select(late_int_method, deconv_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = deconv_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+
+
+### scRNA
+data_PP_scrna = coef_filtered %>%
+  filter(omic_type == "scRNA" & !(is.na(PP_method))) %>%
+  select(late_int_method, PP_method, Estimate, pvalue)
+
+mat_PP_scrna_Estimate = data_PP_scrna %>%
+  select(late_int_method, PP_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_PP_scrna_pvalue = data_PP_scrna %>%
+  select(late_int_method, PP_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+data_FS_scrna = coef_filtered %>%
+  filter(omic_type == "scRNA" & !(is.na(FS_method))) %>%
+  select(late_int_method, FS_method, Estimate, pvalue)
+
+mat_FS_scrna_Estimate = data_FS_scrna %>%
+  select(late_int_method, FS_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_FS_scrna_pvalue = data_FS_scrna %>%
+  select(late_int_method, FS_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+
+
+### MET
+data_PP_met = coef_filtered %>%
+  filter(omic_type == "MET" & !(is.na(PP_method))) %>%
+  select(late_int_method, PP_method, Estimate, pvalue)
+
+mat_PP_met_Estimate = data_PP_met %>%
+  select(late_int_method, PP_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_PP_met_pvalue = data_PP_met %>%
+  select(late_int_method, PP_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+data_FS_met = coef_filtered %>%
+  filter(omic_type == "MET" & !(is.na(FS_method))) %>%
+  select(late_int_method, FS_method, Estimate, pvalue)
+
+mat_FS_met_Estimate = data_FS_met %>%
+  select(late_int_method, FS_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_FS_met_pvalue = data_FS_met %>%
+  select(late_int_method, FS_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+data_deconv_met = coef_filtered %>%
+  filter(omic_type == "MET" & !(is.na(deconv_method))) %>%
+  select(late_int_method, deconv_method, Estimate, pvalue)
+
+mat_deconv_met_Estimate = data_deconv_met %>%
+  select(late_int_method, deconv_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = deconv_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+mat_deconv_met_pvalue = data_deconv_met %>%
+  select(late_int_method, deconv_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = deconv_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("late_int_method") %>%
+  as.matrix()
+
+
+
+
+
+
+
+
+col_fun = circlize::colorRamp2(
+  c(min(c(mat_PP_rna_Estimate, mat_PP_met_Estimate, mat_FS_rna_Estimate, mat_deconv_rna_Estimate, mat_deconv_met_Estimate), na.rm = TRUE), 
+    0, 
+    max(c(mat_PP_rna_Estimate, mat_PP_met_Estimate, mat_FS_rna_Estimate, mat_deconv_rna_Estimate, mat_deconv_met_Estimate), na.rm = TRUE)),
+  c("#2166ac", "#f7f7f7", "#b2182b")
+)
+
+cell_fun_maker = function(pval_mat) {
+  function(j, i, x, y, width, height, fill) {
+    if (!is.na(pval_mat[i, j])) {
+      if (pval_mat[i, j] < 0.001) {
+        grid.text("***", x, y, gp = gpar(fontsize = 10))
+      } else if (pval_mat[i, j] < 0.01) {
+        grid.text("**", x, y, gp = gpar(fontsize = 10))
+      } else if (pval_mat[i, j] < 0.05) {
+        grid.text("*", x, y, gp = gpar(fontsize = 10))
+      } else if (pval_mat[i, j] < 0.1) {
+        grid.text(".", x, y, gp = gpar(fontsize = 10))
+      }
+    }
+  }
+}
+
+
+
+
+
+
+ht_PP_rna = Heatmap(
+  mat_PP_rna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Preprocessing RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_met = Heatmap(
+  mat_PP_met_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Preprocessing MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_scrna = Heatmap(
+  mat_PP_scrna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Preprocessing scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_PP_scrna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+ht_FS_rna = Heatmap(
+  mat_FS_rna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Feature selection RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_FS_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_met = Heatmap(
+  mat_FS_met_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Feature selection MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "",
+  cell_fun = cell_fun_maker(mat_FS_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_scrna = Heatmap(
+  mat_FS_scrna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Feature selection scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_FS_scrna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+ht_deconv_rna = Heatmap(
+  mat_deconv_rna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Deconvolution RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_deconv_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_deconv_met = Heatmap(
+  mat_deconv_met_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Deconvolution MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "",
+  cell_fun = cell_fun_maker(mat_deconv_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+ht_list = ht_PP_rna + ht_PP_met + ht_FS_rna + ht_FS_met + ht_deconv_rna + ht_deconv_met #  + ht_PP_scrna  + ht_FS_scrna
+
+draw(ht_list, 
+     column_title = "Blocks interactions with late integration compare to baseline",
+     column_title_gp = gpar(fontsize = 16, fontface = "bold"),
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right")
+
+# decorate_heatmap_body("Estimate", {
+#   grid.text("* p<0.05  ** p<0.01  *** p<0.001", 
+#             x = unit(0.5, "npc"), 
+#             y = unit(-0.05, "npc"), 
+#             just = "top",
+#             gp = gpar(fontsize = 9, fontface = "italic"))
+# })
+```
+
+#### Early_integration
+
+```{r integration_interaction_plot}
+library(tibble)
+
+all_functions_ei_without_mix = all_functions_ei[c(3:6,9:12)] # to avoid repetition
+mod = lm(score_aggreg ~ (preprocessing_RNA + feature_selection_RNA + preprocessing_scRNA + feature_selection_scRNA + preprocessing_MET + feature_selection_MET + early_integration + deconvolution)^2, data = results_ei[,c("score_aggreg", all_functions_ei_without_mix)])
+
+mod$coefficients[!is.na(mod$coefficients)]
+
+
+
+## Model
+
+# First model for integration strategie
+anova_results = stats::anova(mod) %>%
+  as.data.frame() %>%
+  rownames_to_column("interaction")
+
+
+
+## Heatmap
+
+vars_x = c("deconvolution", "preprocessing_RNA", "feature_selection_RNA", "preprocessing_MET", "feature_selection_MET", "preprocessing_scRNA", "feature_selection_scRNA")
+vars_y = "early_integration"
+
+
+mod_summary = summary(mod)
+coef_df = as.data.frame(mod_summary$coefficients) %>%
+  rownames_to_column("term")
+
+coef_filtered = coef_df %>%
+  filter(
+    str_detect(term, "early_integration") & str_detect(term, paste(vars_x, collapse = "|"))
+  ) %>%
+  rename(
+    pvalue   = `Pr(>|t|)`
+  ) %>%
+  mutate(
+    omic_type = case_when(
+      str_detect(term, "preprocessing_RNA") ~ "RNA",
+      str_detect(term, "preprocessing_MET") ~ "MET",
+      str_detect(term, "preprocessing_scRNA") ~ "scRNA",
+      str_detect(term, "feature_selection_RNA") ~ "RNA",
+      str_detect(term, "feature_selection_MET") ~ "MET",
+      str_detect(term, "feature_selection_scRNA") ~ "scRNA"
+    ),
+    PP_method = case_when(
+      str_detect(term, "preprocessing_RNA") ~ 
+        str_extract(term, "(?<=preprocessing_RNA)[^:]+"),
+      str_detect(term, "preprocessing_MET") ~ 
+        str_extract(term, "(?<=preprocessing_MET)[^:]+"),
+      str_detect(term, "preprocessing_scRNA") ~ 
+        str_extract(term, "(?<=preprocessing_scRNA)[^:]+")
+    ),
+    FS_method = case_when(
+      str_detect(term, "feature_selection_RNA") ~ 
+        str_extract(term, "(?<=feature_selection_RNA)[^:]+"),
+      str_detect(term, "feature_selection_MET") ~ 
+        str_extract(term, "(?<=feature_selection_MET)[^:]+"),
+      str_detect(term, "feature_selection_scRNA") ~ 
+        str_extract(term, "(?<=feature_selection_scRNA)[^:]+"),
+    ),
+    # Extraire la modalité de deconvolution (après "deconvolution_rna" ou "deconvolution_met")
+    deconv_method = case_when(
+      str_detect(term, "deconvolution") ~ 
+        str_extract(term, "(?<=deconvolution)[^:]+")
+    ),
+    # Extraire la modalité de early_integration (après "early_integration")
+    early_int_method = str_extract(term, "(?<=early_integration).+$") %>%
+      str_remove("^:") %>%  # enlever le ":" au début si présent
+      str_remove(":deconvolution.*$")  # enlever la partie deconvolution à la fin
+  )
+  # mutate(
+  #   deconv_label = paste0(deconv_method, "\n(", omic_type, ")"),
+  #   pvalue_signif = pvalue < 0.05
+  # )
+
+
+
+library(ComplexHeatmap)
+
+### RNA
+data_PP_rna = coef_filtered %>%
+  filter(omic_type == "RNA" & !(is.na(PP_method))) %>%
+  select(early_int_method, PP_method, Estimate, pvalue)
+
+mat_PP_rna_Estimate = data_PP_rna %>%
+  select(early_int_method, PP_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_PP_rna_pvalue = data_PP_rna %>%
+  select(early_int_method, PP_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+data_FS_rna = coef_filtered %>%
+  filter(omic_type == "RNA" & !(is.na(FS_method))) %>%
+  select(early_int_method, FS_method, Estimate, pvalue)
+
+mat_FS_rna_Estimate = data_FS_rna %>%
+  select(early_int_method, FS_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_FS_rna_pvalue = data_FS_rna %>%
+  select(early_int_method, FS_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+
+
+
+### scRNA
+data_PP_scrna = coef_filtered %>%
+  filter(omic_type == "scRNA" & !(is.na(PP_method))) %>%
+  select(early_int_method, PP_method, Estimate, pvalue)
+
+mat_PP_scrna_Estimate = data_PP_scrna %>%
+  select(early_int_method, PP_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_PP_scrna_pvalue = data_PP_scrna %>%
+  select(early_int_method, PP_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+data_FS_scrna = coef_filtered %>%
+  filter(omic_type == "scRNA" & !(is.na(FS_method))) %>%
+  select(early_int_method, FS_method, Estimate, pvalue)
+
+mat_FS_scrna_Estimate = data_FS_scrna %>%
+  select(early_int_method, FS_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_FS_scrna_pvalue = data_FS_scrna %>%
+  select(early_int_method, FS_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+
+
+
+
+### MET
+data_PP_met = coef_filtered %>%
+  filter(omic_type == "MET" & !(is.na(PP_method))) %>%
+  select(early_int_method, PP_method, Estimate, pvalue)
+
+mat_PP_met_Estimate = data_PP_met %>%
+  select(early_int_method, PP_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_PP_met_pvalue = data_PP_met %>%
+  select(early_int_method, PP_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = PP_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+data_FS_met = coef_filtered %>%
+  filter(omic_type == "MET" & !(is.na(FS_method))) %>%
+  select(early_int_method, FS_method, Estimate, pvalue)
+
+mat_FS_met_Estimate = data_FS_met %>%
+  select(early_int_method, FS_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_FS_met_pvalue = data_FS_met %>%
+  select(early_int_method, FS_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = FS_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+
+
+
+data_deconv = coef_filtered %>%
+  filter(!(is.na(deconv_method))) %>%
+  select(early_int_method, deconv_method, Estimate, pvalue)
+
+mat_deconv_Estimate = data_deconv %>%
+  select(early_int_method, deconv_method, Estimate) %>%
+  tidyr::pivot_wider(names_from = deconv_method, values_from = Estimate) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+mat_deconv_pvalue = data_deconv %>%
+  select(early_int_method, deconv_method, pvalue) %>%
+  tidyr::pivot_wider(names_from = deconv_method, values_from = pvalue) %>%
+  tibble::column_to_rownames("early_int_method") %>%
+  as.matrix()
+
+
+
+
+
+
+
+
+col_fun = circlize::colorRamp2(
+  c(min(c(mat_PP_rna_Estimate, mat_PP_met_Estimate, mat_FS_rna_Estimate, mat_FS_met_Estimate, mat_deconv_Estimate), na.rm = TRUE), 
+    0, 
+    max(c(mat_PP_rna_Estimate, mat_PP_met_Estimate, mat_FS_rna_Estimate, mat_FS_met_Estimate, mat_deconv_Estimate), na.rm = TRUE)),
+  c("#2166ac", "#f7f7f7", "#b2182b")
+)
+
+cell_fun_maker = function(pval_mat) {
+  function(j, i, x, y, width, height, fill) {
+    if (!is.na(pval_mat[i, j])) {
+      if (pval_mat[i, j] < 0.001) {
+        grid.text("***", x, y, gp = gpar(fontsize = 10))
+      } else if (pval_mat[i, j] < 0.01) {
+        grid.text("**", x, y, gp = gpar(fontsize = 10))
+      } else if (pval_mat[i, j] < 0.05) {
+        grid.text("*", x, y, gp = gpar(fontsize = 10))
+      } else if (pval_mat[i, j] < 0.1) {
+        grid.text(".", x, y, gp = gpar(fontsize = 10))
+      }
+    }
+  }
+}
+
+
+
+
+
+
+ht_PP_rna = Heatmap(
+  mat_PP_rna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Preprocessing RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Early Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_PP_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_met = Heatmap(
+  mat_PP_met_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Preprocessing MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = element_blank(),
+  cell_fun = cell_fun_maker(mat_PP_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_PP_scrna = Heatmap(
+  mat_PP_scrna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Preprocessing scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_PP_scrna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+
+ht_FS_rna = Heatmap(
+  mat_FS_rna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Feature selection RNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Early Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_FS_rna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_met = Heatmap(
+  mat_FS_met_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Feature selection MET",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "",
+  cell_fun = cell_fun_maker(mat_FS_met_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,  # Pour éviter la duplication
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+ht_FS_scrna = Heatmap(
+  mat_FS_scrna_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Feature selection scRNA",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Late Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_FS_scrna_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+
+ht_deconv = Heatmap(
+  mat_deconv_Estimate,
+  name = "Estimate",
+  col = col_fun,
+  column_title = "Deconvolution",
+  column_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  row_title = "Early Integration",
+  row_title_gp = gpar(fontsize = 14, fontface = "bold"),
+  cell_fun = cell_fun_maker(mat_deconv_pvalue),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = TRUE,
+  na_col = "grey90",
+  border = TRUE,
+  rect_gp = gpar(col = "white", lwd = 2)
+)
+
+
+ht_list = ht_PP_rna + ht_PP_met + ht_PP_scrna + ht_FS_rna + ht_FS_met + ht_FS_scrna + ht_deconv
+
+draw(ht_list, 
+     column_title = "Blocks interactions with early integration compare to baseline",
+     column_title_gp = gpar(fontsize = 16, fontface = "bold"),
+     heatmap_legend_side = "right",
+     annotation_legend_side = "right")
+
+# decorate_heatmap_body("Estimate", {
+#   grid.text("* p<0.05  ** p<0.01  *** p<0.001", 
+#             x = unit(0.5, "npc"), 
+#             y = unit(-0.05, "npc"), 
+#             just = "top",
+#             gp = gpar(fontsize = 9, fontface = "italic"))
+# })
+```
+
+
+# Elise's paper plot
+
+## barplot
+
+### Late_integration
+
+```{r barplot_median_aggr_score_of_deconv_by_dataset}
+
+data = results_li_all_dataset
+x_var = "late_integration"
+score = "score_aggreg"
+module_palette = module_pal
+level_palette = level_colors
+
+  
+  if (x_var != "early_integration" && x_var != "late_integration") {
+    data = data[data$preprocessing_mixRNA != "nopp",]
+    data = data[data$feature_selection_mixRNA != "nofs",]
+    data = data[data$preprocessing_RNA != "nopp",]
+    data = data[data$feature_selection_RNA != "nofs",]
+    data = data[data$preprocessing_scRNA != "nopp",]
+    data = data[data$feature_selection_scRNA != "nofs",]
+    data = data[data$preprocessing_mixMET != "nopp",]
+    data = data[data$feature_selection_mixMET != "nofs",]
+    data = data[data$preprocessing_MET != "nopp",]
+    data = data[data$feature_selection_MET != "nofs",]
+  }
+  
+  search_module = which(sapply(names(module_palette), \(module_i){grepl(module_i, x = x_var)}) == 1) 
+  color_module = module_pal[search_module]
+  
+  
+  order_level_x_var = sapply(levels(data[,x_var]), \(level_i){
+    median(data[data[,x_var] == level_i, score], na.rm = TRUE)
+  })
+  # if we look at mae, we want to look at the minimum, otherwise (score aggreg and cor) the max
+  order_level_x_var = order_level_x_var[order(order_level_x_var, decreasing = !(score == "mae"))]
+  data[,x_var] = factor(data[,x_var], levels = names(order_level_x_var))
+  
+  
+  
+  data %>% 
+    mutate(
+      dataset = recode(dataset, "invitro1" = "VITR"),
+      dataset = recode(dataset, "invivo1" = "VIVO"),
+      dataset = recode(dataset, "insilicopseudobulk1" = "SBN5"),
+      dataset = recode(dataset, "insilicodirichletNoDep1" = "SDN5"),
+      dataset = recode(dataset, "insilicodirichletNoDep4CTsource1" = "SDN4"),
+      dataset = recode(dataset, "insilicodirichletNoDep6CTsource1" = "SDN6"),
+      dataset = recode(dataset, "insilicodirichletEMFA1" = "SDE5"),
+      dataset = recode(dataset, "insilicodirichletEMFAImmuneLowProp1" = "SDEL"),
+      dataset = recode(dataset, "insilicodirichletCopule1" = "SDC5"),
+      dataset = factor(dataset, 
+                       levels = c("VITR", "VIVO", "SBN5",
+                                  "SDN5", "SDN4", "SDN6",
+                                  "SDE5", "SDEL", "SDC5"))
+    ) %>% 
+    group_by(dataset, late_integration) %>%
+    filter(late_integration != "OnlyMet" & late_integration != "OnlyRna") %>% 
+    summarise(median_score_aggreg = median(score_aggreg, na.rm = TRUE)) %>% 
+    filter(!is.na(median_score_aggreg)) %>% 
+    ggplot() +
+    geom_bar(aes(x = dataset, y = median_score_aggreg, fill = late_integration), stat='identity', position='dodge') +
+    labs(
+      # title = paste("Median ordered aggregated score for", x_var, "within early integration strategies"),
+      # subtitle = "ordered by median of aggregated score",
+      x = element_blank(),
+      y = "Median aggregated score",
+    ) +
+    ylim(0, 1) +
+    scale_fill_manual(
+      name = "Late integration",
+      values = rep(level_palette[levels(data[,x_var])], length(unique(data$dataset)))
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      panel.border = element_rect(color = color_module, fill = NA, linewidth = 3),
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5)#,
+      # legend.position = "bottom"
+    )
+  
+  
+  
+  
+  # OnlyMet and OnlyRna
+  data %>% 
+    mutate(
+      dataset = recode(dataset, "invitro1" = "VITR"),
+      dataset = recode(dataset, "invivo1" = "VIVO"),
+      dataset = recode(dataset, "insilicopseudobulk1" = "SBN5"),
+      dataset = recode(dataset, "insilicodirichletNoDep1" = "SDN5"),
+      dataset = recode(dataset, "insilicodirichletNoDep4CTsource1" = "SDN4"),
+      dataset = recode(dataset, "insilicodirichletNoDep6CTsource1" = "SDN6"),
+      dataset = recode(dataset, "insilicodirichletEMFA1" = "SDE5"),
+      dataset = recode(dataset, "insilicodirichletEMFAImmuneLowProp1" = "SDEL"),
+      dataset = recode(dataset, "insilicodirichletCopule1" = "SDC5"),
+      dataset = factor(dataset, 
+                       levels = c("VITR", "VIVO", "SBN5",
+                                  "SDN5", "SDN4", "SDN6",
+                                  "SDE5", "SDEL", "SDC5"))
+    ) %>% 
+    group_by(dataset, late_integration) %>%
+    filter(late_integration == "OnlyMet" | late_integration == "OnlyRna") %>% 
+    summarise(median_score_aggreg = median(score_aggreg, na.rm = TRUE)) %>% 
+    filter(!is.na(median_score_aggreg)) %>% 
+    ggplot() +
+    geom_bar(aes(x = dataset, y = median_score_aggreg, fill = late_integration), stat='identity', position='dodge') +
+    labs(
+      # title = paste("Median ordered aggregated score for", x_var, "within early integration strategies"),
+      # subtitle = "ordered by median of aggregated score",
+      x = element_blank(),
+      y = "Median aggregated score",
+    ) +
+    ylim(0, 1) +
+    scale_fill_manual(
+      name = "Uni-omic",
+      values = c("grey40", "grey60")
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      panel.border = element_rect(color = color_module, fill = NA, linewidth = 3),
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5)#,
+      # legend.position = "bottom"
+    )
+
+```
+
+### Early_integration
+
+```{r barplot_median_aggr_score_of_deconv_by_dataset}
+
+data = results_ei_all_dataset
+x_var = "early_integration"
+score = "score_aggreg"
+module_palette = module_pal
+level_palette = level_colors
+
+  
+  if (x_var != "early_integration" && x_var != "late_integration") {
+    data = data[data$preprocessing_mixRNA != "nopp",]
+    data = data[data$feature_selection_mixRNA != "nofs",]
+    data = data[data$preprocessing_RNA != "nopp",]
+    data = data[data$feature_selection_RNA != "nofs",]
+    data = data[data$preprocessing_scRNA != "nopp",]
+    data = data[data$feature_selection_scRNA != "nofs",]
+    data = data[data$preprocessing_mixMET != "nopp",]
+    data = data[data$feature_selection_mixMET != "nofs",]
+    data = data[data$preprocessing_MET != "nopp",]
+    data = data[data$feature_selection_MET != "nofs",]
+  }
+  
+  search_module = which(sapply(names(module_palette), \(module_i){grepl(module_i, x = x_var)}) == 1) 
+  color_module = module_pal[search_module]
+  
+  
+  order_level_x_var = sapply(levels(data[,x_var]), \(level_i){
+    median(data[data[,x_var] == level_i, score], na.rm = TRUE)
+  })
+  # if we look at mae, we want to look at the minimum, otherwise (score aggreg and cor) the max
+  order_level_x_var = order_level_x_var[order(order_level_x_var, decreasing = !(score == "mae"))]
+  data[,x_var] = factor(data[,x_var], levels = names(order_level_x_var))
+  
+  
+  
+  data %>% 
+    mutate(
+      dataset = recode(dataset, "invitro1" = "VITR"),
+      dataset = recode(dataset, "invivo1" = "VIVO"),
+      dataset = recode(dataset, "insilicopseudobulk1" = "SBN5"),
+      dataset = recode(dataset, "insilicodirichletNoDep1" = "SDN5"),
+      dataset = recode(dataset, "insilicodirichletNoDep4CTsource1" = "SDN4"),
+      dataset = recode(dataset, "insilicodirichletNoDep6CTsource1" = "SDN6"),
+      dataset = recode(dataset, "insilicodirichletEMFA1" = "SDE5"),
+      dataset = recode(dataset, "insilicodirichletEMFAImmuneLowProp1" = "SDEL"),
+      dataset = recode(dataset, "insilicodirichletCopule1" = "SDC5"),
+      dataset = factor(dataset, 
+                       levels = c("VITR", "VIVO", "SBN5",
+                                  "SDN5", "SDN4", "SDN6",
+                                  "SDE5", "SDEL", "SDC5"))
+      
+    ) %>% 
+    group_by(dataset, early_integration) %>%
+    summarise(median_score_aggreg = median(score_aggreg, na.rm = TRUE)) %>% 
+    ggplot() +
+    geom_bar(aes(x = dataset, y = median_score_aggreg, fill = early_integration), stat='identity', position='dodge') +
+    labs(
+      # title = paste("Median ordered aggregated score for", x_var, "within early integration strategies"),
+      # subtitle = "ordered by median of aggregated score",
+      x = element_blank(),
+      y = "Median aggregated score",
+    ) +
+    ylim(0, 1) +
+    scale_fill_manual(
+      name = "Early integration",
+      values = rep(level_palette[levels(data[,x_var])], length(unique(data$dataset)))
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      panel.border = element_rect(color = color_module, fill = NA, linewidth = 3),
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5)#,
+      # legend.position = "bottom"
+    )
+
+```
+
+## spider plot
+
+### Late_integration
+
+```{r spider_plot}
+colors_dataset = RColorBrewer::brewer.pal(name="Dark2", n=8)
+
+score_data = results_li_all_dataset %>% 
+  mutate(
+    dataset = factor(dataset, 
+                     levels = c("invitro1", "invivo1", "insilicopseudobulk1",
+                                "insilicodirichletNoDep1", "insilicodirichletNoDep4CTsource1", "insilicodirichletNoDep6CTsource1",
+                                "insilicodirichletEMFA1", "insilicodirichletEMFAImmuneLowProp1", "insilicodirichletCopule1"))
+  ) %>% 
+  select(c(dataset, late_integration) | ends_with("norm")) %>% 
+  filter(dataset != "invivo1") %>% 
+  tidyr::pivot_longer(
+    cols = aid_norm:spearman_tot_norm,
+    names_to = "metric_norm",
+    values_to = "score"
+  ) %>% 
+  group_by(dataset, late_integration, metric_norm) %>%
+  summarise(max_score = max(score, na.rm = TRUE)) %>% 
+  tidyr::pivot_wider(
+    names_from = metric_norm,
+    values_from = max_score
+  )
+
+
+levels(score_data$late_integration)
+late_inte_method = "OnlyMet"
+
+
+df_radarplot = as.data.frame(base::rbind(
+  # rmse,       mae,       aitchison,        pearson_tot, pearson_col, pearson_row, spearman_tot, spearman_col, spearman_row
+  rep(1, ncol(score_data)-2), # the max/best value for each var
+  rep(0, ncol(score_data)-2), # the min/worst value for each var
+  score_data[score_data$late_integration == late_inte_method,-c(1,2)]
+))
+# -Inf appear by max when only NA (for JSD) 
+df_radarplot[df_radarplot < -10] = NA
+
+# remove "_norm" to gain space
+colnames(df_radarplot) <- substr(colnames(df_radarplot), 1, nchar(colnames(df_radarplot)) - 5)
+
+fmsb::radarchart(
+  df_radarplot, 
+  axistype = 0, seg = 5,
+  
+  title = paste(late_inte_method),
+  #custom polygon
+  pcol=colors_dataset, plwd=2, plty = 1,
+ 
+  #custom the grid
+  cglcol="grey", cglty=1, axislabcol="grey50", cglwd=0.8,
+ 
+  #custom labels
+  vlcex=1, vlabels = rep("", ncol(df_radarplot))
+)
+
+# by claude to change justification of labels
+n <- ncol(df_radarplot)
+angles <- (pi/2) + 2 * pi * (seq_len(n) - 1) / n  # angle de chaque axe
+
+r_label <- 1.15  # rayon pour positionner les labels (>1 = hors du graphe)
+x_pos <- (r_label+0.3) * cos(angles)
+y_pos <- r_label * sin(angles)
+
+text(
+  x = x_pos,
+  y = y_pos,
+  labels = colnames(df_radarplot),
+  cex = 0.9,
+  adj = c(0.5, 0.5),   # centrage horizontal / vertical
+  srt = 0,             # rotation en degrés (ex: 45 pour incliné)
+  font = 2,             # gras
+  col = c("red", "blue", "blue", 
+          "blue", "violet", "tan2", 
+          "violet", "blue", "red", 
+          "violet", "tan2", "violet")
+)
+
+
+legend(x=0.1, y=1.1,
+       legend = unique(score_data$dataset),
+       bty = "n", pch=20 , col=colors_dataset, text.col = "black",
+       cex=1, pt.cex=1, x.intersp=.8, y.intersp=.8
+)
+
+```
+
+### Early_integration
+
+```{r spider_plot}
+colors_dataset = RColorBrewer::brewer.pal(name="Dark2", n=8)
+
+score_data = results_ei_all_dataset %>% 
+  mutate(
+    dataset = factor(dataset, 
+                     levels = c("invitro1", "invivo1", "insilicopseudobulk1",
+                                "insilicodirichletNoDep1", "insilicodirichletNoDep4CTsource1", "insilicodirichletNoDep6CTsource1",
+                                "insilicodirichletEMFA1", "insilicodirichletEMFAImmuneLowProp1", "insilicodirichletCopule1"))
+  ) %>% 
+  select(c(dataset, early_integration) | ends_with("norm")) %>% 
+  filter(dataset != "invivo1") %>% 
+  tidyr::pivot_longer(
+    cols = aid_norm:spearman_tot_norm,
+    names_to = "metric_norm",
+    values_to = "score"
+  ) %>% 
+  group_by(dataset, early_integration, metric_norm) %>%
+  summarise(max_score = max(score, na.rm = TRUE)) %>% 
+  tidyr::pivot_wider(
+    names_from = metric_norm,
+    values_from = max_score
+  )
+
+
+levels(score_data$early_integration)
+early_inte_method = "OT"
+
+
+df_radarplot = as.data.frame(base::rbind(
+  # rmse,       mae,       aitchison,        pearson_tot, pearson_col, pearson_row, spearman_tot, spearman_col, spearman_row
+  rep(1, ncol(score_data)-2), # the max/best value for each var
+  rep(0, ncol(score_data)-2), # the min/worst value for each var
+  score_data[score_data$early_integration == early_inte_method,-c(1,2)]
+))
+# -Inf appear by max when only NA (for JSD) 
+df_radarplot[df_radarplot < -10] = NA
+
+# remove "_norm" to gain space
+colnames(df_radarplot) <- substr(colnames(df_radarplot), 1, nchar(colnames(df_radarplot)) - 5)
+
+fmsb::radarchart(
+  df_radarplot, 
+  axistype = 0, seg = 5,
+  
+  title = paste(early_inte_method),
+  #custom polygon
+  pcol=colors_dataset, plwd=2, plty = 1,
+ 
+  #custom the grid
+  cglcol="grey", cglty=1, axislabcol="grey50", cglwd=0.8,
+ 
+  #custom labels
+  vlcex=1, vlabels = rep("", ncol(df_radarplot))
+)
+
+# by claude to change justification of labels
+n <- ncol(df_radarplot)
+angles <- (pi/2) + 2 * pi * (seq_len(n) - 1) / n  # angle de chaque axe
+
+r_label <- 1.15  # rayon pour positionner les labels (>1 = hors du graphe)
+x_pos <- (r_label+0.3) * cos(angles)
+y_pos <- r_label * sin(angles)
+
+text(
+  x = x_pos,
+  y = y_pos,
+  labels = colnames(df_radarplot),
+  cex = 0.9,
+  adj = c(0.5, 0.5),   # centrage horizontal / vertical
+  srt = 0,             # rotation en degrés (ex: 45 pour incliné)
+  font = 2,             # gras
+  col = c("red", "blue", "blue", 
+          "blue", "violet", "tan2", 
+          "violet", "blue", "red", 
+          "violet", "tan2", "violet")
+)
+
+
+
+
+legend(x=1.4, y=1.5,
+       legend =c("VITR", "VIVO", "SBN5",
+                 "SDN5", "SDN4", "SDN6",
+                 "SDE5", "SDEL", "SDC5"),
+       bty = "n", pch=20 , col=colors_dataset, text.col = "black",
+       cex=1, pt.cex=1, x.intersp=.8, y.intersp=.8, bg = "white"
+)
+
+
+
+```
+
+
+
+# Correlations of the different metrics
+
+## Late_integration
+
+```{r cor_dens_plot, fig.height=9}
+
+# Fonction personnalisée pour corrélations avec couleurs et légende
+cor_fun_colored = function(data, mapping, method = "pearson", ndp = 2, sz = 4, ...) {
+  x = eval_data_col(data, mapping$x)
+  y = eval_data_col(data, mapping$y)
+  corr = cor(x, y, method = method, use = "complete.obs")
+  
+  # Palette de couleurs continue de -1 à 1
+  # Utilisation d'une palette divergente : bleu (négatif) - blanc (0) - rouge (positif)
+  color_palette = colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
+  color_index = round((corr + 1) * 50) + 1  # Convertit [-1,1] en [1,100]
+  color_index = pmax(1, pmin(100, color_index))  # Assure que l'index est dans [1,100]
+  col_cor = color_palette[color_index]
+  
+  ggally_text(label = paste0("Corr ", method, " :\n", round(corr, ndp)), 
+              color = col_cor, 
+              size = sz,
+              fontface = "bold") +
+    theme_void()
+}
+
+density_fun_limited = function(data, mapping, ...) {
+  ggplot(data = data, mapping = mapping) +
+    geom_density2d(alpha = 0.6, color = "steelblue", ...) +
+    xlim(0, 1) +
+    ylim(0, 1)
+}
+
+# Version finale optimisée
+ggpairs_final = ggpairs(
+  results_li,  # Dataset complet
+  columns = c("score_aggreg", "rmse_norm", "pearson_col_norm", "spearman_col_norm", "pearson_row_norm", "spearman_row_norm", "aitchison_norm"),
+  upper = list(continuous = cor_fun_colored),
+  lower = list(continuous = density_fun_limited),
+  # lower = list(continuous = wrap("density", alpha = 0.6, bins = 10, fill = "steelblue", xlim = c(0,1), ylim = c(0,1))),
+  diag = list(continuous = wrap("densityDiag", alpha = 0.8, fill = "lightblue"))
+) + 
+theme(
+  strip.text = element_text(size = 10, face = "bold"),
+  axis.text = element_text(size = 8)
+)
+
+print(ggpairs_final)
+```
+
+- Corrélations élevées
+- distribution marginales proches
+
+```{r cor_plot, fig.height=9}
+# results_li[results_li=="NaN"] = NA
+row_rm = apply(results_li,1,function(x) any(is.na(x)))
+results_li_rm = results_li[!row_rm,-(1:(length(all_functions_li)+2))]
+
+score_aggreg_order = grep("score_aggreg", colnames(results_li_rm))
+normalised_metrics = grep("norm", colnames(results_li_rm))
+unnormalised_metrics = (1:ncol(results_li_rm))[-c(score_aggreg_order, normalised_metrics)]
+corr_metric = c(grep("pearson", colnames(results_li_rm)), grep("spearman", colnames(results_li_rm)))
+
+correlations = cor(results_li_rm[,c(
+  score_aggreg_order, 
+  normalised_metrics[!(normalised_metrics %in% corr_metric)], 
+  normalised_metrics[normalised_metrics %in% corr_metric], 
+  unnormalised_metrics[!(unnormalised_metrics %in% corr_metric)],
+  unnormalised_metrics[unnormalised_metrics %in% corr_metric]
+)])
+corrplot::corrplot(correlations, method='ellipse', type='full', outline=T, tl.col='black')
+```
+
+- Aitchison et pearson row (type cell) sont les plus différentiables. Le premiers est cependant du à des limites techniques (valeurs exponentielles lorsque proportions proches de 0).
+- corrélations élevées -> metriques d'angles proche de RMSE et MAE
+
+## Early_integration
+
+```{r cor_dens_plot, fig.height=9}
+
+# Fonction personnalisée pour corrélations avec couleurs et légende
+cor_fun_colored <- function(data, mapping, method = "pearson", ndp = 2, sz = 4, ...) {
+  x <- eval_data_col(data, mapping$x)
+  y <- eval_data_col(data, mapping$y)
+  corr <- cor(x, y, method = method, use = "complete.obs")
+  
+  # Palette de couleurs continue de -1 à 1
+  # Utilisation d'une palette divergente : bleu (négatif) - blanc (0) - rouge (positif)
+  color_palette <- colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
+  color_index <- round((corr + 1) * 50) + 1  # Convertit [-1,1] en [1,100]
+  color_index <- pmax(1, pmin(100, color_index))  # Assure que l'index est dans [1,100]
+  col_cor <- color_palette[color_index]
+  
+  ggally_text(label = paste0("Corr ", method, " :\n", round(corr, ndp)), 
+              color = col_cor, 
+              size = sz,
+              fontface = "bold") +
+    theme_void()
+}
+
+density_fun_eimited <- function(data, mapping, ...) {
+  ggplot(data = data, mapping = mapping) +
+    geom_density2d(alpha = 0.6, color = "steelblue", ...) +
+    xlim(0, 1) +
+    ylim(0, 1)
+}
+
+# Version finale optimisée
+ggpairs_final = ggpairs(
+  results_ei,  # Dataset complet
+  columns = c("score_aggreg", "rmse_norm", "pearson_col_norm", "spearman_col_norm", "pearson_row_norm", "spearman_row_norm", "aitchison_norm"),
+  upper = list(continuous = cor_fun_colored),
+  lower = list(continuous = density_fun_eimited),
+  # lower = list(continuous = wrap("density", alpha = 0.6, bins = 10, fill = "steelblue", xeim = c(0,1), yeim = c(0,1))),
+  diag = list(continuous = wrap("densityDiag", alpha = 0.8, fill = "lightblue"))
+) + 
+theme(
+  strip.text = element_text(size = 10, face = "bold"),
+  axis.text = element_text(size = 8)
+)
+
+print(ggpairs_final)
+```
+
+- Corrélations élevées
+- distribution marginales proches
+
+```{r cor_plot, fig.height=9}
+# results_ei[results_ei=="NaN"] = NA
+row_rm = apply(results_ei,1,function(x) any(is.na(x)))
+results_ei_rm = results_ei[!row_rm,-(1:(length(all_functions_ei)+2))]
+
+score_aggreg_order = grep("score_aggreg", colnames(results_ei_rm))
+normalised_metrics = grep("norm", colnames(results_ei_rm))
+unnormalised_metrics = (1:ncol(results_ei_rm))[-c(score_aggreg_order, normalised_metrics)]
+corr_metric = c(grep("pearson", colnames(results_ei_rm)), grep("spearman", colnames(results_ei_rm)))
+
+correlations = cor(results_ei_rm[,c(
+  score_aggreg_order, 
+  normalised_metrics[!(normalised_metrics %in% corr_metric)], 
+  normalised_metrics[normalised_metrics %in% corr_metric], 
+  unnormalised_metrics[!(unnormalised_metrics %in% corr_metric)],
+  unnormalised_metrics[unnormalised_metrics %in% corr_metric]
+)])
+corrplot::corrplot(correlations, method='ellipse', type='full', outline=T, tl.col='black')
+
+
+# correlations = cor(rbind(
+#   results_li_rm[,c(
+#     score_aggreg_order, 
+#     # normalised_metrics[!(normalised_metrics %in% corr_metric)], 
+#     # normalised_metrics[normalised_metrics %in% corr_metric], 
+#     unnormalised_metrics[!(unnormalised_metrics %in% corr_metric)],
+#     unnormalised_metrics[unnormalised_metrics %in% corr_metric]
+#   )],
+#   results_ei_rm[,c(
+#     score_aggreg_order, 
+#     # normalised_metrics[!(normalised_metrics %in% corr_metric)], 
+#     # normalised_metrics[normalised_metrics %in% corr_metric], 
+#     unnormalised_metrics[!(unnormalised_metrics %in% corr_metric)],
+#     unnormalised_metrics[unnormalised_metrics %in% corr_metric]
+#   )]
+# ))
+# corrplot::corrplot(correlations, method='ellipse', type='full', outline=T, tl.col='black')
+```
+
+- Aitchison et pearson row (type cell) sont les plus différentiables. Le premier est cependant du à des limites techniques (valeurs exponentielles lorsque proportions proches de 0).
+- corrélations élevées -> metriques d'angles proche de RMSE et MAE
+
+
+
+
+# Florent stepwise model
+
+## Late_integration
+
+```{r stepwise_model}
+foo = sapply(names(results_li), function(k) {
+  print(k)
+  main = k
+  if (is.character(results_li[,k]) || is.factor(results_li[,k])) {
+    barplot(table(results_li[,k], useNA="always"), las=2, main=main)
+    return("char")
+k  } else if (is.numeric(results_li[,k])){
+      plot(density(results_li[,k], na.rm=TRUE), main=main)
+      print(paste0("#NA: ", sum(is.na(results_li[,k]))))
+    return("num")
+  } else {
+    stop(paste0("Data type not treated: ", k))
+  }
+})
+
+bar = sapply(names(foo)[foo == "char"], function(k) {
+  print(paste0(k, ": ", length(unique(results_li[,k]))))
+  if (length(unique(results_li[,k]))>1) {
+    return(k) 
+  } else {
+    return(NULL)
+  }
+})
+facts = unlist(bar)
+# score = "spearman_tot"
+score = "score_aggreg"
+f_lo = formula(paste0(score, "~1"))
+f_up = formula(paste0(score, "~."))
+m_lo = lm(f_lo, data=results_li[,c(facts, score)])
+m_up = lm(f_up, data=results_li[,c(facts, score)])
+
+any_line_na = sum(apply(results_li[,c(facts, score)], 1, \(ligne_i){any(is.na(ligne_i))}))
+BIC_constant = log(nrow(results_li) - any_line_na)
+life.lm = step(m_lo, method="forward", scope=list(upper=m_up,lower=m_lo), k = BIC_constant)
+# Step:  AIC=-746072.7
+# score_aggreg ~ deconvolution_rna + dataset + deconvolution_met + 
+#     feature_selection_mixRNA + late_integration + preprocessing_mixRNA + 
+#     preprocessing_mixMET + preprocessing_scRNA
+
+life.lm = step(m_lo, method="both", scope=list(upper=m_up,lower=m_lo), k = BIC_constant)
+# Step:  AIC=-746072.7
+# score_aggreg ~ deconvolution_rna + dataset + deconvolution_met + 
+#     feature_selection_mixRNA + late_integration + preprocessing_mixRNA + 
+#     preprocessing_mixMET + preprocessing_scRNA
+
+
+# spearman_tot ~ late_integration + deconvolution_rna + feature_selection_mixRNA + 
+#     dataset + deconvolution_met + preprocessing_mixMET + preprocessing_mixRNA + 
+#     feature_selection_mixMET
+
+
+# boxplot(formula(paste0(score, "~late_integration")), results_li[,c(facts, score)])
+
+# boxplot(formula(paste0(score, "~late_integration + deconvolution_rna")), results_li[,c(facts, score)], las=2)
+
+
+boxplot(formula(paste0(score, "~dataset")), results_li[,c(facts, score)])
+
+boxplot(formula(paste0(score, "~deconvolution_rna")), results_li[,c(facts, score)], las=2, na.rm = TRUE)
+
+boxplot(formula(paste0(score, "~deconvolution_met")), results_li[,c(facts, score)], las=2, na.rm = TRUE)
+
+```
+
+## Early_integration
+
+```{r stepwise_model}
+foo = sapply(names(results_ei), function(k) {
+  print(k)
+  main = k
+  if (is.character(results_ei[,k]) || is.factor(results_ei[,k])) {
+    barplot(table(results_ei[,k], useNA="always"), las=2, main=main)
+    return("char")
+k  } else if (is.numeric(results_ei[,k])){
+      plot(density(results_ei[,k], na.rm=TRUE), main=main)
+      print(paste0("#NA: ", sum(is.na(results_ei[,k]))))
+    return("num")
+  } else {
+    stop(paste0("Data type not treated: ", k))
+  }
+})
+
+bar = sapply(names(foo)[foo == "char"], function(k) {
+  print(paste0(k, ": ", length(unique(results_ei[,k]))))
+  if (length(unique(results_ei[,k]))>1) {
+    return(k) 
+  } else {
+    return(NULL)
+  }
+})
+facts = unlist(bar)
+# score = "spearman_tot"
+score = "score_aggreg"
+f_lo = formula(paste0(score, "~1"))
+f_up = formula(paste0(score, "~."))
+m_lo = lm(f_lo, data=results_ei[,c(facts, score)])
+m_up = lm(f_up, data=results_ei[,c(facts, score)])
+
+any_eine_na = sum(apply(results_ei[,c(facts, score)], 1, \(eigne_i){any(is.na(eigne_i))}))
+BIC_constant = log(nrow(results_ei) - any_eine_na)
+eife.lm = step(m_lo, method="forward", scope=list(upper=m_up,lower=m_lo), k = BIC_constant)
+# Step:  AIC=-949041.8
+# score_aggreg ~ early_integration + dataset + deconvolution + 
+#     preprocessing_mixRNA + feature_selection_mixRNA + preprocessing_mixMET + 
+#     feature_selection_mixMET
+
+eife.lm = step(m_lo, method="both", scope=list(upper=m_up,lower=m_lo), k = BIC_constant)
+# Step:  AIC=-949041.8
+# score_aggreg ~ early_integration + dataset + deconvolution + 
+#     preprocessing_mixRNA + feature_selection_mixRNA + preprocessing_mixMET + 
+#     feature_selection_mixMET
+
+
+# spearman_tot ~ early_integration + deconvolution_rna + feature_selection_mixRNA + 
+#     dataset + deconvolution_met + preprocessing_mixMET + preprocessing_mixRNA + 
+#     feature_selection_mixMET
+
+
+# boxplot(formula(paste0(score, "~early_integration")), results_ei[,c(facts, score)])
+
+# boxplot(formula(paste0(score, "~early_integration + deconvolution_rna")), results_ei[,c(facts, score)], las=2)
+
+
+boxplot(formula(paste0(score, "~dataset")), results_ei[,c(facts, score)])
+
+boxplot(formula(paste0(score, "~deconvolution")), results_ei[,c(facts, score)], las=2, na.rm = TRUE)
+
+```
+
+
+# PCA
+
+## Late_integration
+
+```{r val_propre_pca_standardise}
+results_li_stand = results_li_all_dataset %>% # median isn't allowed for PCA
+  group_by(dataset) %>%
+  mutate(across(where(is.numeric), ~ .x - mean(.x, na.rm = TRUE))) %>%
+  ungroup() %>% 
+  as.data.frame()
+
+# We remove the in vivo dataset
+results_li_stand_rm = results_li_stand[results_li_stand$dataset != "invivo1", ] # -c(which(colnames(results_li_stand) %in% c("jsd", "jsd_norm")))
+
+
+score_aggreg_order = grep("score_aggreg", colnames(results_li_stand_rm))
+normalised_metrics = grep("norm", colnames(results_li_stand_rm))
+unnormalised_metrics = (1:ncol(results_li_stand_rm))[-c(1:(length(all_functions_li)+2), score_aggreg_order, normalised_metrics)]
+corr_metric = c(grep("pearson", colnames(results_li_stand_rm)), grep("spearman", colnames(results_li_stand_rm)))
+stepwise_most_var = which(colnames(results_li_stand_rm) %in% c("late_integration", "deconvolution_rna", "deconvolution_met"))
+
+pca_results_li_stand_rm = PCA(results_li_stand_rm[,c(score_aggreg_order, stepwise_most_var, unnormalised_metrics)], quanti.sup = 1, quali.sup = 2:(length(stepwise_most_var)+1), graph = FALSE)
+barplot(pca_results_li_stand_rm$eig[,2])
+```
+
+Les trois premières composantes seront analysées, représentant  toujours 96% de la variabilité totale des différentes métriques. La différence est très minime entre données de base et celle standardisé par dataset, la proportion de varance expliquée par la première dimension est plus élevé dans le second cas alors que celles de la deuxième et troisième plus faible.
+
+
+```{r var_plot_pca_standardise}
+# par(mfrow = c(3,2))
+# plot(pca_results_li_stand_rm, axes = c(1, 2), choix="ind")
+plot(pca_results_li_stand_rm, axes = c(1, 2), choix="var")
+# plot(pca_results_li_stand_rm, axes = c(1, 3), choix="ind")
+plot(pca_results_li_stand_rm, axes = c(1, 3), choix="var")
+# plot(pca_results_li_stand_rm, axes = c(2, 3), choix="ind")
+plot(pca_results_li_stand_rm, axes = c(2, 3), choix="var")
+# par(mfrow = c(1,1))
+```
+
+```{r dim_desc_pca_standardise}
+dimdesc(pca_results_li_stand_rm)
+```
+
+On a des axes bien plus séparé 
+- Premier axe construit par l'ensemble des variables (moins aitchison)
+- second axe construit uniquement par les corrélations en lignes (types cell)
+- troisième axe construit uniquement par aitchison
+On voit également que le score aggreg est quasiment parfaitement corrélé au premier axes de cette PCA.
+
+
+```{r new_plot_ellipses_standardise}
+plot_density_groups = function(res_pca, axes = c(1,2), alpha = 0.7) {
+  
+  # Extraction des coordonnées individuelles
+  if("PCA" %in% class(res_pca)) {
+    coord_ind = res_pca$ind$coord[, axes]
+    quali_sup = res_pca$call$quali.sup
+  } else if("CA" %in% class(res_pca)) {
+    coord_ind = res_pca$row$coord[, axes]
+    quali_sup = res_pca$call$quali.sup  
+  } else if("MCA" %in% class(res_pca)) {
+    coord_ind = res_pca$ind$coord[, axes]
+    quali_sup = res_pca$call$quali.sup
+  }
+  
+  # Récupération des données originales
+  data_orig = res_pca$call$X
+  
+  library(ggplot2)
+  library(ggrepel)
+  
+  # Liste pour stocker les graphiques
+  plots_list = list()
+  
+  # Boucle sur chaque variable qualitative supplémentaire
+  for(i in 1:length(quali_sup$numero)) {
+    var_name = colnames(quali_sup$quali.sup)[i]
+    quali_var = data_orig[, quali_sup$numero[i]]
+    
+    # Dataframe pour le graphique
+    df = data.frame(
+      Dim1 = coord_ind[, 1],
+      Dim2 = coord_ind[, 2],
+      groupe = quali_var
+    )
+    
+    # Calcul des barycentres
+    barycentres = aggregate(cbind(Dim1, Dim2) ~ groupe, df, mean)
+    
+    # Création du graphique
+    p = ggplot(df, aes(x = Dim1, y = Dim2, color = groupe)) +
+      geom_density_2d(alpha = alpha) +
+      geom_point(data = barycentres, size = 3) +
+      geom_text_repel(data = barycentres, aes(label = groupe)) +
+      labs(
+        title = var_name, color = var_name, 
+        x = paste0("Dim", axes[1]), y = paste0("Dim", axes[2])
+      ) +
+      theme(legend.position = "bottom")
+    
+    plots_list[[var_name]] = p
+  }
+  
+  # Affichage du panel
+  if(length(plots_list) > 1) {
+    gridExtra::grid.arrange(grobs = plots_list, ncol = 2)
+  } else {
+    print(plots_list[[1]])
+  }
+}
+
+plot_density_groups(res_pca = pca_results_li_stand_rm, axes = c(1,2))
+plot_density_groups(res_pca = pca_results_li_stand_rm, axes = c(1,3))
+plot_density_groups(res_pca = pca_results_li_stand_rm, axes = c(2,3))
+```
+
+Selon le graphique des axes 1 et 2, On retrouve des conclusions que l'on a déjà pu avoir : 
+- pour la deconvolution RNA, c'est RLR, RLRpoisson et node (donc onlyMET) qui ont les valeurs moyennes les plus grandes, donc les meilleurs resultats selon le score aggreg puisqu'il est fortement corrélé à cette axe.
+- pour la deconvolution RNA, on voit bien que node (donc Only RNA) a une valeur faible pour ce premier axe, donc n'a pas de bon résultat pour le score aggreg. On retrouve ces conclusions dans le graphique de late Integration
+
+Pour les dimensions 2 et 3, cela nous donne de nouveau indices concernant certaine méthode :
+- Les méthodes RLR et RLRpoisson ont tendances à plus données des estimation à 0 que lm ou nnls
+- On voit un différence sur la deuxième dimension entre RLR et RLRpoisson, donc la seconde méthode donne des estimations avec un ordre des types cellulaires globalement plus corrélée que la première 
+- La meilleur méthode d'intégration tardive liMeanRMSE a un coefficient faible pour la seconde dimension de l'ACP, donc produit de bonne estimation globale des proportions des types cellulaires mais ne donne pas le bonne ordre de ceux-ci (puisque les corrélation vont de -1 à 1). Paradoxalement, OnlyRNA ne donne pas de bonne estimatio mais le bonne ordre.
+- OnlyRNA est la méthode d'integration tardives a une très forte valeur pour la troisième dimension (cette modalité doit construire à elle seul cet axe), donc OnlyRNA (soit les méthodes de déconvolution sur le transcriptome) a tendance à produire beaucoup d'estimation à 0, puisque c'est cela qui fait explosé la distance d'Aitchison qui est la seul métrique fortement corrélé à cet axe. Cependant, OnlyMET est la seconde valeur la plus forte donc on pourrait donner la même conclusions dans une moindre mesure.
+
+## Early_integration
+
+```{r val_propre_pca_standardise}
+results_ei_stand <- results_ei_all_dataset %>%
+  group_by(dataset) %>%
+  mutate(across(where(is.numeric), ~ .x - mean(.x, na.rm = TRUE))) %>%
+  ungroup() %>% 
+  as.data.frame()
+
+# Then for the PCA, we remove jsd (which is highly correlated to other metrics) and the in vivo dataset
+results_ei_stand_rm = results_ei_stand[results_ei_stand$dataset != "invivo1",] #  -c(which(colnames(results_ei_stand) %in% c("jsd", "jsd_norm")))
+
+
+score_aggreg_order = grep("score_aggreg", colnames(results_ei_stand_rm))
+normalised_metrics = grep("norm", colnames(results_ei_stand_rm))
+unnormalised_metrics = (1:ncol(results_ei_stand_rm))[-c(1:(length(all_functions_ei)+2), score_aggreg_order, normalised_metrics)]
+corr_metric = c(grep("pearson", colnames(results_ei_stand_rm)), grep("spearman", colnames(results_ei_stand_rm)))
+stepwise_most_var = which(colnames(results_ei_stand_rm) %in% c("early_integration", "deconvolution_rna", "deconvolution_met"))
+
+pca_results_ei_stand_rm = PCA(results_ei_stand_rm[,c(score_aggreg_order, stepwise_most_var, unnormalised_metrics)], quanti.sup = 1, quali.sup = 2:(length(stepwise_most_var)+1), graph = FALSE)
+barplot(pca_results_ei_stand_rm$eig[,2])
+```
+
+Les trois premières composantes seront analysées, représentant  toujours 94% de la variabieité totale des différentes métriques. La différence est très minime entre données de base et celle standardisé par dataset, la proportion de varance expeiquée par la première dimension est plus élevé dans le second cas alors que celles de la deuxième et troisième plus faible.
+
+
+```{r var_plot_pca_standardise}
+# par(mfrow = c(3,2))
+# plot(pca_results_ei_stand_rm, axes = c(1, 2), choix="ind")
+plot(pca_results_ei_stand_rm, axes = c(1, 2), choix="var")
+# plot(pca_results_ei_stand_rm, axes = c(1, 3), choix="ind")
+plot(pca_results_ei_stand_rm, axes = c(1, 3), choix="var")
+# plot(pca_results_ei_stand_rm, axes = c(2, 3), choix="ind")
+plot(pca_results_ei_stand_rm, axes = c(2, 3), choix="var")
+# par(mfrow = c(1,1))
+```
+
+```{r dim_desc_pca_standardise}
+dimdesc(pca_results_ei_stand_rm)
+```
+
+On a des axes bien plus séparé 
+- Premier axe construit par l'ensemble des variables (moins aitcison)
+- second axe construit uniquement par les corrélations en eignes (types cell)
+- troisième axe construit uniquement par aitchison
+On voit également que le score aggreg est quasiment parfaitement corrélé au premier axes de cette PCA.
+
+
+```{r new_plot_eleipses_standardise}
+plot_density_groups = function(res_pca, axes = c(1,2), alpha = 0.7) {
+  
+  # Extraction des coordonnées individuelles
+  if("PCA" %in% class(res_pca)) {
+    coord_ind = res_pca$ind$coord[, axes]
+    quali_sup = res_pca$call$quali.sup
+  } else if("CA" %in% class(res_pca)) {
+    coord_ind = res_pca$row$coord[, axes]
+    quali_sup = res_pca$call$quali.sup  
+  } else if("MCA" %in% class(res_pca)) {
+    coord_ind = res_pca$ind$coord[, axes]
+    quali_sup = res_pca$call$quali.sup
+  }
+  
+  # Récupération des données originales
+  data_orig = res_pca$call$X
+  
+  library(ggplot2)
+  library(ggrepel)
+  
+  # Liste pour stocker les graphiques
+  plots_list = list()
+  
+  # Boucle sur chaque variable qualitative supplémentaire
+  for(i in 1:length(quali_sup$numero)) {
+    var_name = colnames(quali_sup$quali.sup)[i]
+    quali_var = data_orig[, quali_sup$numero[i]]
+    
+    # Dataframe pour le graphique
+    df = data.frame(
+      Dim1 = coord_ind[, 1],
+      Dim2 = coord_ind[, 2],
+      groupe = quali_var
+    )
+    
+    # Calcul des barycentres
+    barycentres = aggregate(cbind(Dim1, Dim2) ~ groupe, df, mean)
+    
+    # Création du graphique
+    p = ggplot(df, aes(x = Dim1, y = Dim2, color = groupe)) +
+      geom_density_2d(alpha = alpha) +
+      geom_point(data = barycentres, size = 3) +
+      geom_text_repel(data = barycentres, aes(label = groupe)) +
+      labs(
+        title = var_name, color = var_name, 
+        x = paste0("Dim", axes[1]), y = paste0("Dim", axes[2])
+      ) +
+      theme(legend.position = "bottom")
+    
+    plots_list[[var_name]] = p
+  }
+  
+  # Affichage du panel
+  if(length(plots_list) > 1) {
+    gridExtra::grid.arrange(grobs = plots_list, ncol = 2)
+  } else {
+    print(plots_list[[1]])
+  }
+}
+
+plot_density_groups(res_pca = pca_results_ei_stand_rm, axes = c(1,2))
+plot_density_groups(res_pca = pca_results_ei_stand_rm, axes = c(1,3))
+plot_density_groups(res_pca = pca_results_ei_stand_rm, axes = c(2,3))
+```
+
+Selon le graphique des axes 1 et 2, On retrouve des conclusions que l'on a déjà pu avoir : 
+- pour la deconvolution RNA, c'est RLR, RLRpoisson et node (donc onlyMET) qui ont les valeurs moyennes les plus grandes, donc les meilleurs resultats selon le score aggreg puisqu'il est fortement corrélé à cette axe.
+- pour la deconvolution RNA, on voit bien que node (donc Only RNA) a une valeur faible pour ce premier axe, donc n'a pas de bon résultat pour le score aggreg. On retrouve ces conclusions dans le graphique de late Integration
+
+Pour les dimensions 2 et 3, cela nous donne de nouveau indices concernant certaine méthode :
+- Les méthodes RLR et RLRpoisson ont tendances à plus données des estimation à 0 que lm ou nnls
+- On voit un différence sur la deuxième dimension entre RLR et RLRpoisson, donc la seconde méthode donne des estimations avec un ordre des types cellulaires globalement plus corrélée que la première 
+- La meilleur méthode d'intégration tardive eiMeanRMSE a un coefficient faible pour la seconde dimension de l'ACP, donc produit de bonne estimation globale des proportions des types cellulaires mais ne donne pas le bonne ordre de ceux-ci (puisque les corrélation vont de -1 à 1). Paradoxalement, OnlyRNA ne donne pas de bonne estimatio mais le bonne ordre.
+- OnlyRNA est la méthode d'integration tardives a une très forte valeur pour la troisième dimension (cette modaeité doit construire à elle seul cet axe), donc OnlyRNA (soit les méthodes de déconvolution sur le transcriptome) a tendance à produire beaucoup d'estimation à 0, puisque c'est cela qui fait explosé la distance d'Aitchison qui est la seul métrique fortement corrélé à cet axe. Cependant, OnlyMET est la seconde valeur la plus forte donc on pourrait donner la même conclusions dans une moindre mesure.
+
+
+

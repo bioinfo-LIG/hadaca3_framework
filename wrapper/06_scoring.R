@@ -374,10 +374,10 @@ else{
 
   # Average over judges with the geometric mean for the candidate of interest
   #score_aggreg = exp(mean(log(judge_candidate_norm[1,]),na.rm=T))
-  weights = c(rep(1/3*1/2,2),
-              rep(1/3*1/4,4),
-              rep(1/3*1/4,4),
-              rep(1/3*1/2,2))
+  weights = c(rep(1/4*1/2,2),
+              rep(1/4*1/4,4),
+              rep(1/4*1/4,4),
+              rep(1/4*1/2,2))
   if (nrow(A_pred) > nrow(A_real) & setequal(rownames(A_real), c("basal",'classic'))) {weights = weights_spec}
   score_aggreg = weighgeomMean(judge_candidate_norm[1,],
                                weights)

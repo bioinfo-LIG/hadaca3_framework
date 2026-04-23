@@ -24,17 +24,12 @@ fsID :  #must be a unique ID without _
 #   short_name: Tbnf
 #   omic: [mixRNA,RNA,scRNA]
 
-# SCcluster: #TODO
-#   path: function_blocks/feature_selection/TOAST_vst.R
-#   short_name: SCCL
-#   dependances: "ref_cluster"
-#   omic: [mixRNA,RNA,scRNA]
-
-# # top100 :  #must be a unique ID without _
-# #   path: function_blocks/feature_selection/top100.R
-# #   # dependence : teamH_scSignature.csv top100.
-# #   short_name: T100
-# #   omic: [mixNA,RNA,scRNA]
+SCcluster :
+ path: function_blocks/feature_selection/sc_cluster.R
+ short_name: SCCL
+#  need: [ref_cluster]
+#  omic_need: [scRNA]
+ omic: [mixRNA,RNA,scRNA]
 
 # Toastvst :  #must be a unique ID without _
 #  path: function_blocks/feature_selection/TOAST_vst.R
@@ -45,3 +40,9 @@ fsID :  #must be a unique ID without _
 #   path: function_blocks/feature_selection/SPLS-DA.R
 #   short_name: SPLS
 #   omic: [mixMET,MET]
+
+maxdiscriminant : # Use original ref_met to get max discriminant #must be a unique ID without _
+  path: function_blocks/feature_selection/max_discriminant.R
+  short_name: Mdis
+  omic_need: [scRNA]
+  omic: [mixMET,MET,]
