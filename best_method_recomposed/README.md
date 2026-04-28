@@ -27,9 +27,6 @@ It is called the joker method in memory of the team J that posted this method.
    Met(ID, maxdiscriminant, RLRpoisson)
 
 * benchmark_unimodal_onlyRNA:
-    RNA pp: LogNorm; 
-    RNA fs: Toastbulknbfs
-    RNA deco.: RLRpoisson
     RNA(LogNorm, Toastbulknbfs, RLRpoisson)
 
 
@@ -48,7 +45,6 @@ It is called the joker method in memory of the team J that posted this method.
     MET(ID, Toastpercent) -
     Early_integration(concatscale) -
     Decovolution(RLR)
-
 
 * benchmark_early_integration_Kernel
     RNA(LogNorm, Toastbulknbfs) -

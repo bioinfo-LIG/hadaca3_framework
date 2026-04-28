@@ -51,94 +51,76 @@ program <- function(mix_rna=NULL, ref_bulkRNA=NULL,
   idx_feat = intersect(rownames(mix_rna), rownames(ref_bulkRNA))
   mix_rna = mix_rna[idx_feat,]
   ref_bulkRNA = ref_bulkRNA[idx_feat,]
-
-  # ref_bulkRNA = ref_bulkRNA[intersect(rownames(ref_bulkRNA),
-  #                                           rownames(data)),]
-  # data = data[rownames(ref_bulkRNA),]
   hvg <- TOAST::findRefinx(ref_bulkRNA, nmarker = min(nrow(ref_bulkRNA), nb_fs_rna))
   mix_rna = mix_rna[hvg,]
   ref_bulkRNA = ref_bulkRNA[hvg,]
-  
-
-  ##### decovolution RNA 
-  idx_feat = intersect(rownames(mix_rna), rownames(ref_bulkRNA))
-  mix_rna = mix_rna[idx_feat,]
-  ref_bulkRNA = ref_bulkRNA[idx_feat,]
-
-  get_weights_poisson <- function(ref) {
-    weights = 1/apply(ref, 1, mean)
-    return(weights/sum(weights))
-  }
-
-  compute_rlr_weighted <- function(beta.m, ref.m, weights, correlation_cutoff = 0.99) {
-  library(MASS)
-  library(caret)
-    est.m <- matrix(nrow = ncol(beta.m), ncol = ncol(ref.m))
-    colnames(est.m) <- colnames(ref.m)
-    rownames(est.m) <- colnames(beta.m)
-
-    for (s in seq_len(ncol(beta.m))) {
-      current_ref <- ref.m
-      ref_cols <- colnames(ref.m)
-      success <- FALSE
-
-      while (!success) {
-        # Try fitting the robust linear model
-        tryCatch({
-          rlm.o <- MASS::rlm(beta.m[, s] ~ current_ref - 1, maxit = 50, weights = weights)
-          coef.v <- summary(rlm.o)$coef[, 1]
-
-          # Normalize: remove negatives and enforce sum to 1
-          coef.v[coef.v < 0] <- 0
-          total <- sum(coef.v)
-          coef.v <- coef.v / total
-
-          # Store results
-          est.m[s, ] <- NA
-          est.m[s, colnames(current_ref)] <- coef.v
-          success <- TRUE
-        }, error = function(e) {
-          message(paste("RLM failed for sample", s, "- removing correlated columns..."))
-
-          # Remove highly correlated columns
-          cor_mat <- cor(current_ref)
-          to_remove <- caret::findCorrelation(cor_mat, cutoff = correlation_cutoff)
-
-          if (length(to_remove) == 0) {
-            stop("RLM failed and no correlated columns left to remove.")
-          }
-
-          current_ref <- current_ref[, -to_remove, drop = FALSE]
-        })
-      }
-    }
-    return(t(est.m))
-  } 
-
-  prop_RNA = compute_rlr_weighted(beta.m = mix_rna, ref.m = ref_bulkRNA, weights = get_weights_poisson(ref_bulkRNA))
-  rownames(prop_RNA) <- colnames(ref_bulkRNA)
-
-
-  
+    
 
   ###################
   ##### preprocess MET
-  # no pp 
+  # no LogNorm 
+  mix_met = exp(Seurat::LogNormalize(mix_met))
+  ref_met = exp(Seurat::LogNormalize(ref_met))
 
   ##### fs MET 
-  # no fs
+  # ID
   
 
 
-  ##### decovolution MET 
-  # no de
 
 
 
   ###################
-  ##### Late integration 
-  # no li
+  ##### early integration
+  
 
+  ###################
+  ## decovolution
+  # RLR
+  idx_feat = intersect(rownames(mix), rownames(ref))
+  mix = mix[idx_feat,]
+  ref = ref[idx_feat,]
+
+  library(caret)
+
+  
+  # Define the fallback function
+  get_epidish_with_fallback <- function(beta.m, ref.m, cutoff = 0.99) {
+    safe_epidish <- function(beta, ref) {
+      tryCatch({
+        return(t(EpiDISH::epidish(beta, ref, method = "RPC")$estF))
+      }, error = function(e) {
+        warning("EpiDISH failed, attempting to remove correlated columns...")
+
+        cor_matrix <- cor(ref)
+        to_remove <- caret::findCorrelation(cor_matrix, cutoff = cutoff)
+        if (length(to_remove) == 0) {
+          warning("Still failing after correlation removal. Returning zero matrix.")
+          return(matrix(0, nrow = ncol(ref), ncol = ncol(beta),
+                        dimnames = list(colnames(ref), colnames(beta))))
+        }
+
+        ref_clean <- ref[, -to_remove, drop = FALSE]
+
+        # Try again with reduced matrix
+        tryCatch({
+          return(t(EpiDISH::epidish(beta, ref_clean, method = "RPC")$estF))
+        }, error = function(e2) {
+          warning("EpiDISH still failed after cleaning. Returning zero matrix.")
+          return(matrix(0, nrow = ncol(ref), ncol = ncol(beta),
+                        dimnames = list(colnames(ref), colnames(beta))))
+        })
+      })
+    }
+
+    return(safe_epidish(beta.m, ref.m))
+  }
+
+
+  prop <- get_epidish_with_fallback(mix,ref)
+
+
+  rownames(prop) <- colnames(ref)
   
   return(prop_RNA)
 
