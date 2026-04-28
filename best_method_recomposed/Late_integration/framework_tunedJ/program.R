@@ -8,6 +8,31 @@ program <- function(mix_rna=NULL, ref_bulkRNA=NULL,
   # Library
   install.packages(c("dplyr","MASS","caret"))
   
+
+  clean_matrix <- function(matrix){
+      matrix <- as.matrix(matrix)
+      # Remove rows  with NA or Inf
+      matrix <- matrix[complete.cases(matrix), , drop = FALSE]
+      matrix <- matrix[rowSums(is.infinite(matrix)) == 0, , drop = FALSE]
+      # Remove rows with all zeros
+      matrix <- matrix[rowSums(matrix) > 0, ]  # Remove rows with all zeros
+      # Remove rows with zero variance
+      matrix <- matrix[apply(matrix, 1, var) > 0, , drop = FALSE]
+      return(matrix)
+  }
+
+
+  mix_rna = clean_matrix(mix_rna)
+  mix_met = clean_matrix(mix_met)
+  ref_bulkRNA <- clean_matrix(ref_bulkRNA)
+  ref_met <- clean_matrix(ref_met)
+  ref_scRNA <- lapply(ref_scRNA, function(x) {
+        list(counts=as(clean_matrix(x$counts),'dgCMatrix'),
+              metadata=x$metadata)}
+        )       
+
+
+
   #max_discriminent
   library(dplyr) 
   # Decovolution 
@@ -15,6 +40,7 @@ program <- function(mix_rna=NULL, ref_bulkRNA=NULL,
   library(caret)
 
   ##### preprocess RNA
+  #scale
   scale_matrix <- function(mat) {
   mat = sweep(mat, 2, colSums(mat), "/")
   return(mat)
@@ -26,9 +52,9 @@ program <- function(mix_rna=NULL, ref_bulkRNA=NULL,
   # ID
 
   ##### decovolution RNA 
-   idx_feat = intersect(rownames(uni_data$mix), rownames(uni_data$ref))
-  uni_data$mix = uni_data$mix[idx_feat,]
-  uni_data$ref = uni_data$ref[idx_feat,]
+  idx_feat = intersect(rownames(mix_rna), rownames(ref_bulkRNA))
+  mix_rna = mix_rna[idx_feat,]
+  ref_bulkRNA = ref_bulkRNA[idx_feat,]
 
   get_weights_poisson <- function(ref) {
     weights = 1/apply(ref, 1, mean)
@@ -85,7 +111,8 @@ program <- function(mix_rna=NULL, ref_bulkRNA=NULL,
 
   ####################
   ##### prepocess scRNA :
-  # ID 
+  # LogNorm 
+  # ref_scRNA <- lapply(ref_scRNA, function(x) list(counts=Seurat::LogNormalize(x$counts), metadata=x$metadata))
 
   ##### feature selection scRNA : 
   # ID
