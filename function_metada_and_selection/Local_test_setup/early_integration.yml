@@ -14,10 +14,10 @@ concatscale:
   short_name: Consc
   language: R
 
-Kernel:
-  path: function_blocks/early_integration/Kernel.R 
-  short_name: Kern
-  language: R
+# Kernel:
+#   path: function_blocks/early_integration/Kernel.R 
+#   short_name: Kern
+#   language: R
 
 
 # concatnoscale:

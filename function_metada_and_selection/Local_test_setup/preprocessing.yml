@@ -4,17 +4,17 @@ ppID :  #must be a unique ID
   omic: [ANY]
 
 
-# normalize :  #must be a unique ID
-#   path: function_blocks/preprocessing/normalize.R
-#   short_name: norm
-#   omic: [mixMET,MET] #,mixRNA,RNA
+normalize :  #must be a unique ID
+  path: function_blocks/preprocessing/normalize.R
+  short_name: norm
+  omic: [mixMET,MET] #,mixRNA,RNA
 
 
-sccluster : # seurat created object
-  path: function_blocks/preprocessing/sc_cluster.R
-  short_name: sccl
-  create: [ref_cluster]
-  omic: [scRNA]
+# sccluster : # seurat created object
+#   path: function_blocks/preprocessing/sc_cluster.R
+#   short_name: sccl
+#   create: [ref_cluster]
+#   omic: [scRNA]
   
 
 # scScale :  #must be a unique ID
