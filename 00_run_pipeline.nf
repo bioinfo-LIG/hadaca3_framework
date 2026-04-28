@@ -43,11 +43,6 @@ params.wrapper = [
 params.utils = "utils/data_processing.R"
 params.utils_py = "utils/data_processing.py"
 
-// def get_omic(path) {
-//     return path.split('/')[-2]
-// }
-
-
 workflow { 
 
     // ################## Reading yml file and populating CONFIG file. 
@@ -58,10 +53,6 @@ workflow {
         def parsedContent = new groovy.yaml.YamlSlurper().parse(filePath as File) 
         CONFIG[key] = parsedContent
     }
-
-    // original_datasets_files = CONFIG['datasets'].collect { k, v -> v['path'] }.flatten()
-    // cleaned_datasets_files = CONFIG['datasets'].keySet().collect { "output/mixes/${it}" }
-
 
     // ################## Computing cleaned mix and ref clean and generating a tuple with key as the dataset or ref name and output file. 
 
@@ -105,8 +96,6 @@ workflow {
 
 
     pp_mix_path = []
-    // pp_block_path = []
-
     /// creating pp_mixes and specific preprocess that could not be mixed with other pp and fs (not_intercompatible). 
     CONFIG['pre_proc'].each { pp, ppv ->
             params.mixomics.each { omic ->
@@ -177,10 +166,6 @@ workflow {
 
 //     // ################## Generate combinaison and prediction for  features selection
     
-
-    // pp_filter.pp_rna_incompatible.view()
-    // pp_filter.pp_met_incompatible.view()
-
     fs_files = pp_filter.normal_pp.map { meta , last_pp_file ->
         def results = []
         def pp_create = meta.pp_create ;
@@ -189,17 +174,13 @@ workflow {
         }
 
         def pp_omics = meta.pp_omics ;  
-        // println(pp_omics)
         CONFIG['features_selection'].each { fs, fsv ->
-            def dup_meta = meta.clone() 
-            // def pp_create = dup_meta.pp_create  ; 
-            // def pp_omics = dup_meta.pp_omics ;  
+            def dup_meta = meta.clone()   
             dup_meta["fs_need"] = fsv.getOrDefault('need','none')
             dup_meta["fs_omic_need"] = fsv.getOrDefault('omic_need',['none'])
             def fs_need = fsv.getOrDefault('need',['none'])
             def fs_omic_need = fsv.getOrDefault('omic_need',['none'])
             if (fsv['omic'].contains(dup_meta.omic) || fsv['omic'].contains('ANY')    ) {
-                // println( dup_meta.omic + ' ' + dup_meta.pp_fun + ' ' + pp_create + ' ; ' + fs + ' ' + fs_need + ' ' +   fs_need.contains(pp_create) )
                 // fs need contains pp_create (works also for none)
                 // OR the omic being computed is not never created but fs need another kind of omic therfor not in pp_omicS and pp_create is not special
                 if( 
@@ -258,13 +239,10 @@ workflow {
     fs_RNA = fs_branch.fs_dependency_RNA
     .combine(out_pp_create_filtered)
     .filter{ fs_meta, a,b,c,d,e,dataset_file,ref_file, pp_meta,pp_file ->
-        // println(pp_meta.omic +" " + pp_meta.pp_create + ' ' + fs_meta.fs_need)
 //      We keep pp_create in fs_need and omic treated not in fs_omic_need 
         pp_meta.omic =="scRNA" &&   pp_meta.pp_create[0] in fs_meta.fs_need  &&    fs_meta.omic !in fs_meta.fs_omic_need   
     }
     .map{fs_meta, a,b,c,d,e,dataset_file,ref_file, pp_meta,pp_file  ->
-        // println(pp_meta.omic +" " + pp_meta.pp_create + ' ' + fs_meta.fs_need)
-
         def dup_fs_meta = fs_meta.clone()
         dup_fs_meta["need_used"] = pp_meta.pp_create[0]
 
@@ -292,11 +270,7 @@ workflow {
 
 
 
-
     out_fs =  fs_branch.simple_fs.mix(fs_MET , fs_RNA) | Features_selection
-    // out_fs = complete_fs_files | Features_selection
-
-    // out_fs.view{v -> v[0].output}
 
 
 // #######################################################
@@ -328,7 +302,6 @@ workflow {
     }
     //filter on same function for mix and bulk 
     .filter{ meta_mix,file_input_mix, meta_RNA,file_input_RNA,meta_scRNA,file_input_scRNA,   dataset_meta, dataset_file, ref_meta, ref_file ->
-        // println(meta_mix.pp_fun + meta_mix.fs_fun)
         meta_mix.pp_fun == meta_RNA.pp_fun && meta_mix.fs_fun == meta_RNA.fs_fun && meta_mix.need_used == meta_RNA.need_used
     }
     .filter{ meta_mix,file_input_mix, meta_RNA,file_input_RNA,meta_scRNA,file_input_scRNA,   dataset_meta, dataset_file, ref_meta, ref_file ->
@@ -344,7 +317,7 @@ workflow {
          return (not_in_need  || in_need_matching_scRNA)
     }
 
-    // resolve non comptaible blocks
+    // resolve non compatible blocks
     non_comptible_rna_block = 
     pp_filter.pp_rna_incompatible.combine(pp_filter.pp_rna_incompatible).combine(pp_filter.pp_rna_incompatible).combine(out_mix).combine(out_cleaned_ref)    
     .filter{meta_mix,file_input_mix, meta_RNA,file_input_RNA,meta_scRNA,file_input_scRNA,   dataset_meta, dataset_file, ref_meta, ref_file ->
@@ -354,9 +327,8 @@ workflow {
     }
 
     de_rna_unit = 
-    de_channel.combine(rna_unit.mix(non_comptible_rna_block)) //.mix(non_comptible_rna_block)
+    de_channel.combine(rna_unit.mix(non_comptible_rna_block)) 
     .map{ meta_de, de_script, meta_mix,file_input_mix, meta_RNA,file_input_RNA,meta_scRNA,file_input_scRNA,   dataset_meta, dataset_file, ref_meta, ref_file->
-        // def meta_unit_rna = 
         def dup_meta_de =meta_de.clone()
         dup_meta_de['mixRNA'] = meta_mix
         dup_meta_de['RNA'] = meta_RNA
@@ -372,16 +344,11 @@ workflow {
         tuple(dup_meta_de,de_script,file_input_mix, file_input_RNA,file_input_scRNA, dataset_file,ref_file)
     }
     
-    // de_rna_unit.view()
-
-    // de_rna_unit.view{v -> v[0].output   + "   " + v[6]}
 
     out_de_rna_unit = 
     de_rna_unit.combine(Channel.of(tuple(file(params.wrapper.script_04_rna),file(params.utils)))) 
     | Prediction_deconvolution_rna 
 
-    // out_de_rna_unit.view{v -> v[0].output}
-    // out_de_rna_unit.view{v -> v[0].output   + "   " + v[0].mixRNA.need_used + "   " + v[0].RNA.need_used + v[0].de_fun}
 
 // ################## Generate combinaison for the MET unit 
 
@@ -396,7 +363,6 @@ workflow {
         deco_path_met.add( [ [de_fun : de]  , file(dev.path)])
         }
     }
-    // CONFIG.deconvolution.each {de,dev -> deco_path_met.add( [ [de_fun : de]  , file(dev.path)])}
 
     de_channel_met = Channel.fromList(deco_path_met)
 
@@ -405,7 +371,7 @@ workflow {
     .filter{meta_mix, file_input_mix, meta_MET,file_input_MET,dataset_meta, dataset_file, ref_meta, ref_file ->
         meta_MET.ref == ref_meta.id && meta_mix.ref == ref_meta.id && meta_mix.dataset == dataset_meta.id
     } 
-    // filter mix and bulk to have the same functions : 
+
     .filter{meta_mix, file_input_mix, meta_MET,file_input_MET,dataset_meta, dataset_file, ref_meta, ref_file ->
         meta_mix.pp_fun == meta_MET.pp_fun && meta_mix.fs_fun == meta_MET.fs_fun
     }
@@ -443,9 +409,7 @@ workflow {
 
 // ################## Generate combinaison for late integration
 
-    //add none prediction for rna/met only. 
-
-
+    //add none prediction metadata for rna/met only. 
 
     li_path =  []
     CONFIG.late_integration.each {li,liv -> li_path.add([ [li_fun:li ] , file(liv.path)])}
@@ -461,12 +425,7 @@ workflow {
                             de_fun:"node"], 
                             file("none_unit") 
                             ))
-    
 
-
-    // out_de_met_unit.count().view()
-    // out_de_rna_unit.count().view()
-    
     li_combinaison = li_channel
 
     .combine(out_de_rna_unit.mix(none_unit))  // inject none_unit into RNA
@@ -525,16 +484,9 @@ workflow {
         tuple( dup_li_meta,li_file , file_rna , file_met, dataset_file,ref_file )
     }.combine(Channel.of(tuple(file(params.wrapper.script_05),file(params.utils))))
 
-    // li_combinaison.count().view()
-    // li_combinaison.count()
-
 
     out_li = li_combinaison | Late_integration 
-    // out_li = Channel.of()
 
-
-    // out_li.view{v -> v[0].output}
-    // out_li.view()
 // ################################  Early integration and deconvolution path
 
 
@@ -577,8 +529,7 @@ workflow {
         dup_meta_ei['scRNA'] = meta_scRNA
         dup_meta_ei['mixMET'] = meta_mixMET
         dup_meta_ei['MET'] = meta_MET
-        // dup_meta_ei['rna_unit'] = meta_rna
-        // dup_meta_ei['met_unit'] = meta_met
+
 
         def output_name = "out-li-" + [dup_meta_ei.dataset,dup_meta_ei.ref].join('_')   + '_' + 
             [dup_meta_ei.mixRNA.pp_fun, dup_meta_ei.mixRNA.fs_fun ].join('_')           + '_' +
@@ -594,7 +545,6 @@ workflow {
            file_input_mixMET, file_input_MET,  dataset_file_MET, ref_file_MET
         )
     }
-    // .combine(Channel.of(tuple(file(params.wrapper.script_04_early),file(params.utils))))
     .map { 
         meta_ei, ei_file, file_input_mixRNA, file_input_RNA, file_input_scRNA, 
      file_input_mixMET, file_input_MET, dataset_file_MET, ref_file_MET ->
@@ -623,14 +573,12 @@ workflow {
 
     ei_out_r = ei_combinaison.R_ei_combinaison | early_integration
     ei_out_py = ei_combinaison.Py_ei_combinaison | early_integration_python
-    // ei_out = ei_out_r.concat(ei_out_py)
     ei_out = ei_out_py.concat(ei_out_r)
 
 // ################## Deconvolution of the early integration. 
 
 
     ei_decon_path =  []
-    // CONFIG.deconvolution.each {de,dev -> ei_decon_path.add( [ [de_fun : de]  , file(dev.path)])}
     
     CONFIG.deconvolution.each {de,dev -> 
         def de_omic = dev.getOrDefault('omic','ANY')
@@ -661,21 +609,19 @@ workflow {
 
     out_ei_de = de_channel_EI | decovolution_EI
 
-    // ei_de_out.view()
-
 // ################## Generate score 
 
     score_input_li = out_li.map{   meta,file_path  -> 
         def dup_meta = meta.clone()
         def output_name = "score-li-" + [dup_meta.dataset,dup_meta.ref].join('_')  + '_' +
-            ['mixRNA',  dup_meta.rna_unit.mixRNA.pp_fun, dup_meta.rna_unit.mixRNA.fs_fun ].join('_')   +   '_' +  //dup_meta.rna_unit.mixRNA.omic,
-            ['RNA', dup_meta.rna_unit.RNA.pp_fun, dup_meta.rna_unit.RNA.fs_fun ].join('_')           +   '_' +  //dup_meta.rna_unit.RNA.omic,
-            ['scRNA', dup_meta.rna_unit.scRNA.pp_fun, dup_meta.rna_unit.scRNA.fs_fun,dup_meta.rna_unit.de_fun ].join('_')   + '_'    +    //dup_meta.rna_unit.scRNA.omic,
-            ['mixMET',  dup_meta.met_unit.mixMET.pp_fun, dup_meta.met_unit.mixMET.fs_fun ].join('_') + '_'  +    //dup_meta.rna_unit.mixMET.omic,
-            ['MET', dup_meta.met_unit.MET.pp_fun, dup_meta.met_unit.MET.fs_fun ,dup_meta.met_unit.de_fun].join('_')  + '_'  +       //dup_meta.rna_unit.MET.omic,
+            ['mixRNA',  dup_meta.rna_unit.mixRNA.pp_fun, dup_meta.rna_unit.mixRNA.fs_fun ].join('_')   +   '_' +  
+            ['RNA', dup_meta.rna_unit.RNA.pp_fun, dup_meta.rna_unit.RNA.fs_fun ].join('_')           +   '_' +  
+            ['scRNA', dup_meta.rna_unit.scRNA.pp_fun, dup_meta.rna_unit.scRNA.fs_fun,dup_meta.rna_unit.de_fun ].join('_')   + '_'    +   
+            ['mixMET',  dup_meta.met_unit.mixMET.pp_fun, dup_meta.met_unit.mixMET.fs_fun ].join('_') + '_'  +    
+            ['MET', dup_meta.met_unit.MET.pp_fun, dup_meta.met_unit.MET.fs_fun ,dup_meta.met_unit.de_fun].join('_')  + '_'  +    
             dup_meta.li_fun    +'.h5'
         dup_meta["output"] = output_name
-        tuple(dup_meta, file_path, file(CONFIG.datasets[dup_meta.dataset].groundtruth_file_path),file(params.wrapper.script_06),file(params.utils))//,file(params.config_files.datasets))
+        tuple(dup_meta, file_path, file(CONFIG.datasets[dup_meta.dataset].groundtruth_file_path),file(params.wrapper.script_06),file(params.utils))
     }   
 
     score_input_ei = out_ei_de.map{ ei_meta, ei_file ->
@@ -693,12 +639,10 @@ workflow {
 
     score_out = score_input_li.mix(score_input_ei) | Scoring
 
-    // score_out.view{ v -> v[0].output}
-
 
 // ################## Generate Metaanalysis
 
-    // input_meta = score_out.collect(flat: false)
+
     list_groundtruth_path =[]
     CONFIG.datasets.each {data,datav -> list_groundtruth_path.add(datav.groundtruth_file_path)
     }
@@ -721,19 +665,6 @@ workflow {
     
     input_meta = l_meta.collect(flat: false).concat(l_path.collect(flat: false).concat( pred_files.collect(flat:false)).concat(Channel_groundtruth_files)).collect(flat: false)
     .combine(  Channel.of(tuple(file(params.wrapper.script_07),file(params.wrapper.script_08),file(params.utils))))
-
-
-    // input_meta.count().view()
-    // input_meta.map{v-> v[0].output.each{k -> println(k)}}
-
-    // input.count().view()
-    // input_meta.view { v-> v.size()  }
-    // input_meta.view { v-> v[0].size() +' ' +v[1].size()   }
-    // input_meta.view { v-> v[0] +' \n\n\n' +v[1][0]   }
-
-    // input_meta.view { v-> v[0][1] +' ' +v[1][1]   }
-
-    // input_meta.view()
 
     input_meta | Metaanalysis 
 
@@ -1181,14 +1112,11 @@ process Metaanalysis {
         path(meta_script), 
         path(meta_script2),
         path(utils), 
-        // path(file_dataset)
+
     )
-    // tuple( tuple(val(meta) ,path(input_score)),
-    // path(meta_script),
-    // path(utils))
 
     output:
-    path("08_metaanalysis.html") //08_metaanalysis.html
+    path("08_metaanalysis.html")
     path("08_metaanalysis_files")
     path("07_prep_metaanalysis*.html")
     path("07_prep_metaanalysis*_files")
