@@ -1,0 +1,42 @@
+---
+title: "HADACA3 - filtering features"
+author: "Florent Chuffart"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+---
+
+```{r, include=(FALSE)}
+knitr::opts_chunk$set(collapse=TRUE, comment="#>", fig.width=9, fig.height=6, eval=TRUE, echo=TRUE, results="verbatim")
+options(knitr.duplicate.label = "allow")
+```
+
+
+
+```{r}
+authorized_genes  = readRDS(authorized_genes_file)
+authorized_probes = readRDS(authorized_probes_file)
+
+tmp = readRDS(paste0(reference_file))
+if (domain=="pdac") {
+  tmp$ref_bulkRNA = tmp$ref_bulkRNA[authorized_genes,]
+  tmp$ref_met = tmp$ref_met[authorized_probes,]
+  # tmp$ref_scRNA$ref_sc_peng$counts = tmp$ref_scRNA$ref_sc_peng$counts[authorized_genes,]
+  # tmp$ref_scRNA$ref_sc_baron$counts = tmp$ref_scRNA$ref_sc_baron$count[intersect(authorized_genes,rownames(tmp$ref_scRNA$ref_sc_baron$count)),]
+  # tmp$ref_scRNA$ref_sc_raghavan$counts = tmp$ref_scRNA$ref_sc_raghavan$counts[intersect(authorized_genes,rownames(tmp$ref_scRNA$ref_sc_raghavan$count)),]
+ # tmp$ref_scRNA$ref_sc_peng$counts@Dimnames[[1]] = tmp$ref_scRNA$ref_sc_peng$counts@Dimnames[[1]][which(tmp$ref_scRNA$ref_sc_peng$count@Dimnames[[1]] %in% authorized_genes)]
+  #tmp$ref_scRNA$ref_sc_baron$counts@Dimnames[[1]] = tmp$ref_scRNA$ref_sc_baron$counts@Dimnames[[1]][which(tmp$ref_scRNA$ref_sc_baron$count@Dimnames[[1]] %in% authorized_genes)]
+  #tmp$ref_scRNA$ref_sc_raghavan$counts@Dimnames[[1]] = tmp$ref_scRNA$ref_sc_raghavan$counts@Dimnames[[1]][which(tmp$ref_scRNA$ref_sc_raghavan$count@Dimnames[[1]] %in% authorized_genes)]
+}
+
+reference_file_split = strsplit(reference_file,"/")[[1]]
+saveRDS(tmp, file = paste0(reference_file_split[1],"/filtered", reference_file_split[2]))
+```
+
+
+
+# Session Information
+
+```{r, results="verbatim"}
+sessionInfo()
+```

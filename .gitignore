@@ -7,7 +7,7 @@
 
 logs/*
 
-data/*
+*.h5
 __pycache__/*
 tmp*
 old_datasets/*

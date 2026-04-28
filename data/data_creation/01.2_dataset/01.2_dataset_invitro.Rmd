@@ -1,0 +1,110 @@
+---
+title: "HADACA3 - Generate invitrodata for data challenge hadaca"
+author: "Elise Amblard, Florent Chuffart"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+---
+
+This script generates in vitro data that can be used by the participants and in vitro data that will be used only during the scoring phase
+
+```{r, include=(FALSE)}
+knitr::opts_chunk$set(collapse=TRUE, comment="#>", fig.width=9, fig.height=6, eval=TRUE, echo=TRUE, results="verbatim")
+options(knitr.duplicate.label = "allow")
+```
+
+# Parameters
+
+Here we set up inputs and outputs files for the vignette.
+
+```{r params}
+if (!exists("source_file"))   {reference_file = "source_pdac.rds"} 
+if (!exists("mixes_files"))       {mixes_files = c("mixes1_invitro_pdac.rds","mixes2_invitro_pdac.rds")} 
+if (!exists("groundtruth_files")) {groundtruth_files = c("groundtruth1_invitro_pdac.rds","groundtruth2_invitro_pdac.rds")} 
+```
+
+# Objectives
+
+This script generates:
+
+- `r mixes_files` (a list with expression/methylation matrices `mix_rna` and `mix_met`), 
+- `r groundtruth_files` (proportion matrix)
+
+It takes as input reference data obtained from script 01.1_src_pdac.Rmd.
+
+# Read reference data 
+
+```{r reference}
+ref = readRDS(paste0("../",source_file))
+rna_seq_ref = ref$src_bulkRNA
+dna_met_ref = ref$src_met
+rm(ref)
+gc()
+```
+
+# Ground truth and mixes matrices - read and split
+
+## Ground truth - read {-}
+
+```{r}
+ground_truth = readRDS("~/projects/datashare/cometh_lot1/test_solution.rds")[[1]][,1:30]
+
+colnames(rna_seq_ref)
+rownames(ground_truth)
+mask_ref = c("immune","basal","classic","immune","immune","endo","fibro","immune","immune")
+
+ground_truth_with_mask = t(sapply(colnames(rna_seq_ref), function(celltype)
+  if (sum(mask_ref==celltype)==1) {
+    ground_truth[mask_ref==celltype,]
+  } else {colSums(ground_truth[mask_ref==celltype,])}
+))
+```
+
+## Ground truth - split {-}
+
+```{r}
+set.seed(20240)
+
+idx_phaseUsers = sample(1:ncol(ground_truth_with_mask), size=round(ncol(ground_truth_with_mask))/2)
+
+# idx_phaseUsers catches the indexes of the in vitro samples that will be visible for the challenge participants
+
+saveRDS(ground_truth_with_mask[,idx_phaseUsers], paste0("../",groundtruth_files[1]))
+saveRDS(ground_truth_with_mask[,-idx_phaseUsers], paste0("../",groundtruth_files[2]))
+```
+
+## Mixes matrices - read {-}
+
+```{r}
+# Loading the DESeq normalised RNA matrix
+rna_measure = read.table("~/projects/datashare/cometh_lot1/transcriptome/gene_counts_normalised.txt")
+rna_measure = as.matrix(rna_measure)
+# Loading the filtered-normalised DNAm matrix
+met_measure = readRDS("~/projects/datashare/cometh_lot1/methylation/test_data_met_new.rds")
+
+rna_measure = rna_measure[,colnames(ground_truth_with_mask)]
+met_measure = met_measure[,colnames(ground_truth_with_mask)]
+```
+
+## Mixes matrices - split {-}
+
+```{r}
+mixes_data_phaseUsers <- list(mix_rna=rna_measure[,idx_phaseUsers],
+                              mix_met=met_measure[,idx_phaseUsers])
+mixes_data_phaseEval <- list(mix_rna=rna_measure[,-idx_phaseUsers],
+                             mix_met=met_measure[,-idx_phaseUsers])
+```
+
+# Save 
+
+```{r}
+saveRDS(mixes_data_phaseUsers, paste0("../",mixes_files[1]))
+saveRDS(mixes_data_phaseEval, paste0("../",mixes_files[2]))
+```
+
+
+# Session Information
+
+```{r, results="verbatim"}
+sessionInfo()
+```

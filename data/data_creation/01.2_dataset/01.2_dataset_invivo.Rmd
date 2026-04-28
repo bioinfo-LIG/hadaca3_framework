@@ -1,0 +1,77 @@
+---
+title: "HADACA3 - Generate in vivo data for hadaca"
+author: "Elise Amblard"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+---
+# Libraries 
+
+```{r, include=(FALSE)}
+knitr::opts_chunk$set(collapse=TRUE, comment="#>", fig.width=9, fig.height=6, eval=TRUE, echo=TRUE, results="verbatim")
+options(knitr.duplicate.label = "allow")
+```
+
+```{r params}
+if (!exists("source_file")) {source_file = "source_pdac.rds"} 
+if (!exists("mixes_files")) {mixes_files = c("mixes1_invivo_pdac.rds","mixes2_invivo_pdac.rds")} 
+if (!exists("groundtruth_files")) {groundtruth_files = c("groundtruth1_invivo_pdac.rds","groundtruth2_invivo_pdac.rds")} 
+```
+
+
+# Objectives
+
+This script generates :
+
+- `r mixes_files` (a list with expression/methylation matrices `mix_rna` and `mix_met`), 
+
+- `r groundtruth_files` (proportion matrix)
+
+# Proportion and expression matrices - read and split
+
+## Proportion and expression/methylation matrix - read
+
+```{r, results="verbatim"}
+# available at /bettik/amblaeli/projects/datashare/cometh_lot2/
+met_measure = readRDS("~/projects/datashare/cometh_lot2/methylation/test_data_met_new.rds")
+rna_measure = read.table("~/projects/datashare/cometh_lot2/transcriptome/gene_counts_normalised.txt")
+ground_truth = read.csv("~/projects/datashare/cometh_lot2/prediction_owkin/preds_clean_50_add_mr.csv", row.names=1)
+rownames(ground_truth) = ground_truth$ID_QCPF
+ground_truth = t(ground_truth[,c(4,3)])
+rownames(ground_truth) = c('basal','classic')
+ground_truth = ground_truth[,sort(colnames(ground_truth))]
+
+# match samples
+colnames(ground_truth) = sapply(colnames(ground_truth), function(x) strsplit(x,"_")[[1]][1])
+colnames(met_measure) = sapply(colnames(met_measure), function(x) strsplit(x,"_")[[1]][1])
+colnames(rna_measure) = sapply(colnames(rna_measure), function(x) strsplit(x,"_")[[1]][1])
+common_samples = intersect(colnames(ground_truth),
+                                       intersect(colnames(met_measure),
+                                                 colnames(rna_measure)))
+ground_truth = ground_truth[,common_samples]
+met_measure = met_measure[,common_samples]
+rna_measure = rna_measure[,common_samples]
+```
+
+## Proportion matrix - split
+
+```{r, results="verbatim"}
+set.seed(20240)
+
+split_Users = sample(seq(length(common_samples)), size=round(length(common_samples)/2))
+
+saveRDS(ground_truth[,split_Users], paste0("../",groundtruth_files[1]))
+saveRDS(ground_truth[,-split_Users],paste0("../",groundtruth_files[2]))
+```
+
+## Expression matrix - split
+
+```{r, results="verbatim"}
+mixes_data_phaseUsers <- list(mix_met=met_measure[,split_Users],
+                              mix_rna=rna_measure[,split_Users])
+mixes_data_phaseEval <- list(mix_met=met_measure[,-split_Users],
+                              mix_rna=rna_measure[,-split_Users])
+
+saveRDS(mixes_data_phaseUsers, paste0("../",mixes_files[1]))
+saveRDS(mixes_data_phaseEval, paste0("../",mixes_files[2]))
+```

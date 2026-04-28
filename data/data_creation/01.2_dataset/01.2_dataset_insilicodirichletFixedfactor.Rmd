@@ -1,0 +1,512 @@
+---
+title: "HADACA3 - Generate data for data challenge hadaca"
+author: "Lucie Lamothe, Hugo Barbot and Magali Richard"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+---
+# Libraries 
+
+```{r, include=(FALSE)}
+knitr::opts_chunk$set(echo = TRUE)
+# library(Seurat)
+```
+
+
+```{r params}
+if (!exists("source_file")) {source_file = "source_pdac.rds"} 
+if (!exists("mixes_files"))       {mixes_files = c("mixes_insilicodirichletFixedfactor1_pdac.rds","mixes_insilicodirichletFixedfactor2_pdac.rds")} 
+if (!exists("groundtruth_files")) {groundtruth_files = c("groundtruth_insilicodirichletFixedfactor1_pdac.rds","groundtruth_insilicodirichletFixedfactor2_pdac.rds")} 
+```
+
+# Objectives
+
+This script generates :
+
+- mixes_data.rds (a list with `mix_rna` and `mix_met` matrices), 
+
+- ground_truth.rds
+
+It takes in input source data (script 01.1_src_XXX.Rmd).
+
+# Read source data 
+
+```{r, results="verbatim"}
+
+src = readRDS(paste0("../",source_file))
+
+rna_seq_src = src$src_bulkRNA
+dna_met_src = src$src_met
+rm(src)
+gc()
+
+```
+
+# Proportion matrix simulation
+
+An example of generative model for 5 cell types, in pancreatic adenocarinoma.
+
+General distribution :
+
+    normal 15%
+    fibro 45%,
+    immune 10%,
+    cancer 30% (divided between basal and classic)
+    
+Subdivision of cancer types among cancer cells.
+
+-> in 1/3 samples : 50% type basal, 50% type classic
+
+-> in 1/3 samples : 25% type basal, 75% type classic
+
+-> in 1/3 samples : 10% type basal, 90% type classic
+
+
+
+
+## Proportion matrix generation
+
+Below code to generate only 1 simulation 
+
+```{r prop_mat_generation, results="verbatim"}
+# set.seed(1)
+
+nb_samples = 60
+
+
+
+# alpha_prop1 = dampack::dirichlet_params(
+#   p.mean = c(0.15, 0.45, 0.1, 0.5*0.3, 0.5*0.3), # 0.15, 0.15
+#   sigma = c(0.06, 0.06, 0.03, 0.06, 0.06)
+# )
+# cannot install dampack in a reproductible environment (and not that necessary), so here the results of upper lines
+alpha_prop1 = c(5.162500, 15.487500, 3.441667, 5.162500, 5.162500)
+
+# alpha_prop2 = dampack::dirichlet_params(
+#   p.mean = c(0.15, 0.45 , 0.1, 0.75*0.3, 0.25*0.3), # 0.225, 0.075
+#   sigma = c(0.06, 0.06, 0.03, 0.06, 0.06)
+# )
+# cannot install dampack in a reproductible environment (and not that necessary), so here the results of upper lines
+alpha_prop2 = c(5.162500, 15.487500, 3.441667, 7.743750, 2.581250)
+
+# alpha_prop3 = dampack::dirichlet_params(
+#   p.mean = c(0.15, 0.45 , 0.1, 0.9*0.3, 0.1*0.3), # 0.27, 0.03
+#   sigma = c(0.06, 0.06, 0.03, 0.06, 0.06)
+# )
+# cannot install dampack in a reproductible environment (and not that necessary), so here the results of upper lines
+alpha_prop3 = c(5.162500, 15.487500, 3.441667, 9.292500, 1.032500)
+
+
+n = floor(nb_samples/3)
+proportion = t(rbind(
+  gtools::rdirichlet(n = n + (nb_samples - 3*n), alpha = alpha_prop1),
+  gtools::rdirichlet(n = n, alpha = alpha_prop2),
+  gtools::rdirichlet(n = n, alpha = alpha_prop3)
+))
+
+rownames(proportion) = c("endo", "fibro", "immune", "classic", "basal") # /!\ endo proportion unrealistic, modify!
+
+rm(alpha_prop1, alpha_prop2, alpha_prop3, n)
+```
+
+```{r, results="verbatim", eval=FALSE}
+set.seed(10)
+
+simu_proportion_pancreas = function(n, alpha = c(1.5, 4.5, 1, 3)){
+  tmp_mix_Lvar = t(gtools::rdirichlet(n = n, alpha = alpha))
+  tumor_rep = cbind(t(gtools::rdirichlet(n = n/3, alpha = c(0.5, 0.5))),
+              t(gtools::rdirichlet(n = n/3, alpha = c(0.75, 0.25))),
+              t(gtools::rdirichlet(n = n/3, alpha = c(0.9, 0.1))))
+  mix_Lvar = matrix(nrow = 5, ncol = n)
+  mix_Lvar [1:3, ] = tmp_mix_Lvar[1:3, ]
+  mix_Lvar[4, ] = tumor_rep[1, ]*tmp_mix_Lvar[4, ]
+  mix_Lvar[5, ] = tumor_rep[2, ]*tmp_mix_Lvar[4, ]
+
+  return(mix_Lvar)
+}
+
+nb_samples = 60
+
+proportion = simu_proportion_pancreas(n = nb_samples) # n -> number of samples
+rownames(proportion) = c("endo", "fibro", "immune", "classic", "basal") # /!\ endo proportion unrealistic, modify!
+```
+
+## Ground truth - split {-}
+
+```{r}
+set.seed(20240)
+
+idx_phaseUsers = sample(1:ncol(proportion), size=round(ncol(proportion))/2)
+
+# idx_phaseUsers catches the indexes of the in vitro samples that will be visible for the challenge participants
+
+saveRDS(proportion[,idx_phaseUsers], paste0("../",groundtruth_files[1]))
+saveRDS(proportion[,-idx_phaseUsers], paste0("../",groundtruth_files[2]))
+```
+
+  
+# Simulation of DNAm and RNA mixes from convolution Mix_met Mix_RNA
+
+The following function adds noise to the simulation to make is harder to deconvolve, more life like.
+
+In order to harder the deconvolution, here the added noise is randomly chosen from distribution with different parameters for different randomly selected subset of genes/met probes. 
+
+Laplace or chi2 law can be used. Issue of chi2 is that it only add positive values. 
+
+
+## Simulation Mix_RNA
+
+Below code to generate only 1 simulation 
+
+
+I start by generating the noise. I want correlation between genes so I simulate a correlated dataset (with the normal law family) with a correlation structure trying to be like the one of RNA in vitro data. It's the first version so it's very handcrafted
+
+
+```{r generate_corr_data_rna, results="verbatim"}
+div = 7.5 * nb_samples/30
+a = 1:nb_samples / div
+
+# nrow(rna_seq_src)/4 # If nrow(rna_seq_src) isn't a multiple of 4, it will not work
+
+corr_dumb_data_rna = cbind(
+  replicate(nrow(rna_seq_src)/8, rnorm(nb_samples)), # no corr
+  replicate(nrow(rna_seq_src)*5/16, rnorm(nb_samples, mean = a/2)), # some slight more pos corr
+  replicate(nrow(rna_seq_src)*5/16, rnorm(nb_samples, mean = -a/2)),  # some slight more neg corr
+  replicate(nrow(rna_seq_src)/8, rnorm(nb_samples, mean = a)), # some slight more pos corr
+  replicate(nrow(rna_seq_src)/8, rnorm(nb_samples, mean = -a))  # some slight more neg corr
+)
+# tmptmp = cor(corr_dumb_data_rna)
+# tmptmp = tmptmp[lower.tri(tmptmp)]
+# hist(
+#   tmptmp,
+#   nclass = 100,
+#   main = "Distribution of two by two correlations between 10000 normally generated vector with mean a",
+#   sub = paste0("where a is 1:", nb_samples, " / ", div),
+#   col = "tan",
+#   ylab = "Density",
+#   xlab = "Residual correlations",
+#   freq = FALSE,
+#   ylim = c(0, 3),
+#   xlim = c(-1, 1),
+#   bty = "l"
+# )
+# xx = seq(-1,1,0.01)
+# lines(xx, dnorm(xx, sd = 1/sqrt(nb_samples)))
+
+```
+
+Then we center and scale (by row) the data saw they keep the correlation structure but look like generated by a N(0,1) law. next step is to take they value by the C.D.F. so we have a uniform-like values.
+
+
+```{r center_scale_pnorm_rna, results="verbatim"}
+corr_dumb_data_rna = t(corr_dumb_data_rna)
+mean_corr_dumb_data_rna = rowMeans(corr_dumb_data_rna)
+c_corr_dumb_data_rna = corr_dumb_data_rna - tcrossprod(mean_corr_dumb_data_rna, rep(1, ncol(corr_dumb_data_rna)))  # centré
+sd_corr_dumb_data_rna = sqrt(rowMeans(c_corr_dumb_data_rna^2))
+sc_corr_dumb_data_rna = c_corr_dumb_data_rna/tcrossprod(sd_corr_dumb_data_rna, rep(1, ncol(corr_dumb_data_rna)))
+
+
+unif_sc_corr_dumb_data_rna = pnorm(sc_corr_dumb_data_rna)
+# tmptmp = cor(t(unif_sc_corr_dumb_data_rna))
+# tmptmp = tmptmp[lower.tri(tmptmp)]
+# hist(
+#   tmptmp,
+#   nclass = 100,
+#   main = "Distribution of two by two correlations between 10000 unif transformed vector",
+#   sub = paste0("where a is 1:30 / ", div),
+#   col = "tan",
+#   ylab = "Density",
+#   xlab = "Residual correlations",
+#   freq = FALSE,
+#   ylim = c(0, 3),
+#   xlim = c(-1, 1),
+#   bty = "l"
+# )
+# # xx = seq(-1,1,0.01)
+# lines(xx, dnorm(xx, sd = 1/sqrt(nb_samples)))
+```
+
+Now, unif-like values can be considered as p-value, we just have to define a law for each gene and the correlation structure is still conserved. Here for RNA data, I take a $\chi^2$ law center by its df and with 4 groups with different df.
+
+```{r transform_to_gene_specific_law, results="verbatim"}
+stopifnot(rownames(proportion) == colnames(rna_seq_src))
+
+Mix_RNA =  as.matrix(rna_seq_src) %*% proportion #convolution of source matrix with proportion matrix
+# subset_genes = subset_features(Mix_RNA, 4)
+
+noise_rna = unif_sc_corr_dumb_data_rna
+rownames(noise_rna) = rownames(Mix_RNA)
+
+# ddl = 1
+# noise_rna[subset_genes[[1]],] = apply(noise_rna[subset_genes[[1]],], 2, \(x){
+#   qchisq(x, df = ddl) - ddl
+# })
+#   
+# ddl = 2
+# noise_rna[subset_genes[[2]],] = apply(noise_rna[subset_genes[[2]],], 2, \(x){
+#   qchisq(x, df = ddl) - ddl
+# })
+# 
+# ddl = 5
+# noise_rna[subset_genes[[3]],] = apply(noise_rna[subset_genes[[3]],], 2, \(x){
+#   qchisq(x, df = ddl) - ddl
+# })
+# 
+# ddl = 10
+# noise_rna[subset_genes[[4]],] = apply(noise_rna[subset_genes[[4]],], 2, \(x){
+#   qchisq(x, df = ddl) - ddl
+# })
+
+
+# mean_epsilon_in_vitro_rna = readRDS(file = "01-add/simu_data_driven/mean_epsilon_in_vitro_rna_21000.rds") # decentrality
+sd_epsilon_in_vitro_rna = readRDS(file = "01-additional/simu_data_driven/sd_epsilon_in_vitro_rna_21000.rds")
+
+sd_epsilon_in_vitro_rna[sd_epsilon_in_vitro_rna > 3000] = 3000
+stopifnot(identical(
+  names(sd_epsilon_in_vitro_rna),
+  rownames(noise_rna)
+))
+
+# decentrality
+# For bias over 1% from a normal distrib with the sd of the specific gene, I take 2.5*sd_epsilon_in_vitro_rna with the same sign
+# bias_exceeding = abs(mean_epsilon_in_vitro_rna) > 2.5*sd_epsilon_in_vitro_rna
+# mean_epsilon_in_vitro_rna[bias_exceeding] = 2.5*sd_epsilon_in_vitro_rna[bias_exceeding]*sign(mean_epsilon_in_vitro_rna[bias_exceeding]) 
+
+for (gene_i in 1:nrow(noise_rna)) {
+  ddl_gene_i = sd_epsilon_in_vitro_rna[gene_i]
+  noise_rna[gene_i,] = qchisq(noise_rna[gene_i,], df = ddl_gene_i) - ddl_gene_i # + mean_epsilon_in_vitro_rna[gene_i]
+}
+
+if (any(is.na(noise_rna))) {
+  print(paste(sum(is.na(noise_rna)), "NaN generated by qchisq"))
+  ddl_gene_i = 1
+  noise_rna[is.na(noise_rna)] = qchisq(unif_sc_corr_dumb_data_rna[is.na(noise_rna)], df = ddl_gene_i) - ddl_gene_i
+  stopifnot(sum(is.na(noise_rna)) == 0)
+}
+
+
+Mix_RNA = Mix_RNA + noise_rna
+
+which_gene_neg = apply(Mix_RNA, 1, \(gene_i){any(gene_i<0)})
+which_gene_neg = names(which_gene_neg[which(which_gene_neg)])
+
+for (gene_i in which_gene_neg) {
+  # ddl_gene_i = sd_epsilon_in_vitro_rna[gene_i]
+  Mix_RNA[gene_i,] = Mix_RNA[gene_i,] - min(Mix_RNA[gene_i,]) + runif(nb_samples, min = 0, max = 1e-3)
+}
+# Mix_RNA[Mix_RNA<0] = runif(sum(Mix_RNA<0), min = 0, max = 5)
+
+# tmp = Mix_RNA - as.matrix(rna_seq_src) %*% proportion
+# tmptmp = cor(t(tmp))
+# tmptmp = tmptmp[lower.tri(tmptmp)]
+# hist(
+#   tmptmp,
+#   nclass = 100,
+#   main = "Distribution of two by two correlations between 10000 unif transformed vector",
+#   sub = paste0("where a is 1:30 / ", div),
+#   col = "tan",
+#   ylab = "Density",
+#   xlab = "Residual correlations",
+#   freq = FALSE,
+#   ylim = c(0, 3),
+#   xlim = c(-1, 1),
+#   bty = "l"
+# )
+# xx = seq(-1,1,0.01)
+# lines(xx, dnorm(xx, sd = 1/sqrt(nb_samples)))
+# 
+# ggplot() +
+#     geom_density(aes(x = rowMeans(tmp)))
+# ggplot() +
+#     geom_density(aes(x = rowMeans(tmp))) +
+#     scale_x_continuous(limits = c(-5,5))
+# ggplot() +
+#     geom_density(aes(x = apply(tmp, 1, sd)))
+
+
+rm(div, a, corr_dumb_data_rna, mean_corr_dumb_data_rna, c_corr_dumb_data_rna, sd_corr_dumb_data_rna, sc_corr_dumb_data_rna, unif_sc_corr_dumb_data_rna, noise_rna, ddl_gene_i, sd_epsilon_in_vitro_rna)#, bias_exceeding, mean_epsilon_in_vitro_rna)
+```
+
+
+
+## Simulation Mix_met
+
+```{r generate_corr_data_met, results="verbatim"}
+div = 7.5 * nb_samples/30
+a = 1:nb_samples / div
+
+# nrow(rna_seq_src)/4 # If nrow(rna_seq_src) isn't a multiple of 4, it will not work
+
+# limite on pourrait determiner qu'elle mixture de loi normale permet de faire la densité de corr des vrai données
+
+corr_dumb_data_met = cbind( 
+  replicate(floor(nrow(dna_met_src)/16), rnorm(nb_samples, mean = -a/3)), # few neg corr       500
+  replicate(ceiling(nrow(dna_met_src)*3/32), rnorm(nb_samples)), # no corr                     750 
+  replicate(ceiling(nrow(dna_met_src)/8), rnorm(nb_samples, mean = a/3)), # few pos corr       1000
+  replicate(floor(nrow(dna_met_src)*7/32), rnorm(nb_samples, mean = a/2)), # light pos corr    1750
+  replicate(nrow(dna_met_src)/2, rnorm(nb_samples, mean = a)) # some slight more pos corr      4000
+)
+# tmptmp = cor(corr_dumb_data_met[,sample(1:nrow(dna_met_src), 20000)])
+# tmptmp = tmptmp[lower.tri(tmptmp)]
+# hist(
+#   tmptmp,
+#   nclass = 100,
+#   main = "Distribution of two by two correlations between 20000 normally generated vector with mean a",
+#   sub = paste0("where a is 1:", nb_samples, " / ", div),
+#   col = "tan",
+#   ylab = "Density",
+#   xlab = "Residual correlations",
+#   freq = FALSE,
+#   ylim = c(0, 3),
+#   xlim = c(-1, 1),
+#   bty = "l"
+# )
+# xx = seq(-1,1,0.01)
+# lines(xx, dnorm(xx, sd = 1/sqrt(nb_samples)))
+
+```
+
+
+
+Then we center and scale (by row) the data saw they keep the correlation structure but look like generated by a N(0,1) law. next step is to take they value by the C.D.F. so we have a uniform-like values.
+
+
+```{r center_scale_pnorm_met, results="verbatim"}
+corr_dumb_data_met = t(corr_dumb_data_met)
+mean_corr_dumb_data_met = rowMeans(corr_dumb_data_met)
+c_corr_dumb_data_met = corr_dumb_data_met - tcrossprod(mean_corr_dumb_data_met, rep(1, ncol(corr_dumb_data_met)))  # centré
+sd_corr_dumb_data_met = sqrt(rowMeans(c_corr_dumb_data_met^2))
+sc_corr_dumb_data_met = c_corr_dumb_data_met/tcrossprod(sd_corr_dumb_data_met, rep(1, ncol(corr_dumb_data_met)))
+
+
+unif_sc_corr_dumb_data_met = pnorm(sc_corr_dumb_data_met)
+# tmptmp = cor(t(unif_sc_corr_dumb_data_met[sample(1:nrow(dna_met_src), 20000), ]))
+# tmptmp = tmptmp[lower.tri(tmptmp)]
+# hist(
+#   tmptmp,
+#   nclass = 100,
+#   main = "Distribution of two by two correlations between 20000 unif transformed vector",
+#   sub = paste0("where a is 1:30 / ", div),
+#   col = "tan",
+#   ylab = "Density",
+#   xlab = "Residual correlations",
+#   freq = FALSE,
+#   ylim = c(0, 3),
+#   xlim = c(-1, 1),
+#   bty = "l"
+# )
+# # xx = seq(-1,1,0.01)
+# lines(xx, dnorm(xx, sd = 1/sqrt(nb_samples)))
+```
+
+
+Now, unif-like values can be considered as p-value, we just have to define a law for each gene and the correlation structure is still conserved. Here for Methylation data, I take a Laplace law center to 0, with very law standard variations and again different groups with different sd. 
+
+```{r transform_to_probe_specific_law, results="verbatim"}
+stopifnot(rownames(proportion) == colnames(dna_met_src))
+
+Mix_met = as.matrix(dna_met_src) %*% proportion #convolution of source matrix with proportion matrix
+# subset_probes = subset_features(Mix_met, 4)
+
+noise_met = unif_sc_corr_dumb_data_met
+rownames(noise_met) = rownames(Mix_met)
+
+# sigma = 1/15
+# noise_met[subset_probes[[1]],] = apply(noise_met[subset_probes[[1]],], 2, \(x){
+#   extraDistr::qlaplace(x, mu = 0, sigma = sigma)
+# })
+#   
+# sigma = 1/20
+# noise_met[subset_probes[[2]],] = apply(noise_met[subset_probes[[2]],], 2, \(x){
+#   extraDistr::qlaplace(x, mu = 0, sigma = sigma)
+# })
+# 
+# sigma = 1/30
+# noise_met[subset_probes[[3]],] = apply(noise_met[subset_probes[[3]],], 2, \(x){
+#   extraDistr::qlaplace(x, mu = 0, sigma = sigma)
+# })
+# 
+# sigma = 1/50
+# noise_met[subset_probes[[4]],] = apply(noise_met[subset_probes[[4]],], 2, \(x){
+#   extraDistr::qlaplace(x, mu = 0, sigma = sigma)
+# })
+
+
+# mean_epsilon_in_vitro_met = readRDS(file = "01-add/simu_data_driven/mean_epsilon_in_vitro_met_820k.rds") # decentrality
+sd_epsilon_in_vitro_met = readRDS(file = "01-additional/simu_data_driven/sd_epsilon_in_vitro_met_820k.rds")
+
+stopifnot(identical(
+  names(sd_epsilon_in_vitro_met),
+  rownames(noise_met)
+)) 
+
+# decentrality
+# For bias over 1% from a normal distrib with the sd of the specific gene, I take 2.5*sd_epsilon_in_vitro_rna with the same sign
+# bias_exceeding = abs(mean_epsilon_in_vitro_met) > 2.5*sd_epsilon_in_vitro_met
+# mean_epsilon_in_vitro_met[bias_exceeding] = 2.5*sd_epsilon_in_vitro_met[bias_exceeding]*sign(mean_epsilon_in_vitro_met[bias_exceeding])
+
+
+for (probe_i in 1:nrow(noise_met)) {
+  sigma_probe_i = sd_epsilon_in_vitro_met[probe_i]
+  noise_met[probe_i,] = extraDistr::qlaplace(noise_met[probe_i,], mu = 0, sigma = sigma_probe_i) # + mean_epsilon_in_vitro_met[probe_i]
+}
+
+if (any(is.na(noise_met))) {
+  print(paste(sum(is.na(noise_met)), "NaN generated by qlaplace"))
+  sigma_probe_i = 1/20
+  noise_met[is.na(noise_met)] = extraDistr::qlaplace(unif_sc_corr_dumb_data_met[is.na(noise_met)], mu = 0, sigma = sigma_probe_i)
+  stopifnot(sum(is.na(noise_met)) == 0)
+}
+
+
+Mix_met = Mix_met + noise_met
+Mix_met[Mix_met<0] = runif(sum(Mix_met<0), min = 0, max = 1e-03)
+Mix_met[Mix_met>1] = runif(sum(Mix_met>1), min = 1-1e-03, max = 1)
+
+# tmp_sample = sample(1:nrow(dna_met_src), 20000)
+# tmp = Mix_met[tmp_sample,] - as.matrix(dna_met_src)[tmp_sample,] %*% proportion
+# tmptmp = cor(t(tmp))
+# tmptmp = tmptmp[lower.tri(tmptmp)]
+# hist(
+#   tmptmp,
+#   nclass = 100,
+#   main = "Distribution of two by two correlations between 10000 unif transformed vector",
+#   sub = paste0("where a is 1:30 / ", div),
+#   col = "tan",
+#   ylab = "Density",
+#   xlab = "Residual correlations",
+#   freq = FALSE,
+#   ylim = c(0, 3),
+#   xlim = c(-1, 1),
+#   bty = "l"
+# )
+# xx = seq(-1,1,0.01)
+# lines(xx, dnorm(xx, sd = 1/sqrt(nb_samples)))
+# 
+# ggplot() +
+#     geom_density(aes(x = rowMeans(tmp)))
+# ggplot() +
+#     geom_density(aes(x = apply(tmp, 1, sd)))
+
+
+rm(div, a, corr_dumb_data_met, mean_corr_dumb_data_met, c_corr_dumb_data_met, sd_corr_dumb_data_met, sc_corr_dumb_data_met, unif_sc_corr_dumb_data_met, noise_met, sigma_probe_i, sd_epsilon_in_vitro_met, bias_exceeding, mean_epsilon_in_vitro_met)
+```
+
+
+
+## Mixes matrices - split {-}
+
+```{r}
+mixes_data_phaseUsers <- list(mix_rna=Mix_RNA[,idx_phaseUsers],
+                              mix_met=Mix_met[,idx_phaseUsers])
+mixes_data_phaseEval <- list(mix_rna=Mix_RNA[,-idx_phaseUsers],
+                             mix_met=Mix_met[,-idx_phaseUsers])
+```
+
+# Save into list
+
+```{r, results="verbatim"}
+saveRDS(mixes_data_phaseUsers, paste0("../",mixes_files[1]))
+saveRDS(mixes_data_phaseEval, paste0("../",mixes_files[2]))
+```
+
