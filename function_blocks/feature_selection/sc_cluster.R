@@ -13,7 +13,6 @@ program_block_FS <- function(data,path_og_dataset='') {
       data = lapply(data, function(x) list(counts = x$counts[sc_markers,], metadata = x$metadata))
     } 
     else {
-      # data = data[sc_markers,]
       data = data[sc_markers[sc_markers %in% rownames(data)],]
     }
 

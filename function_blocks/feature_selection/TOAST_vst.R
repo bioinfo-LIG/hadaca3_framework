@@ -12,8 +12,6 @@ program_block_FS <- function(data, path_og_dataset) {
   top_genes <- determine_variable_genes(og_ref_bulkRNA, nb_fs_rna)
   top_gene_names <- rownames(og_ref_bulkRNA)[top_genes]
 
-  # multi_data$mix$mix_rna = multi_data$mix$mix_rna[top_genes,]
-  # multi_data$ref$ref_bulkRNA = multi_data$ref$ref_bulkRNA[top_genes,]
 
   convert_and_filter_sparse_matrix <- function(x, top_gene_names){
     dense_counts <- as.matrix(x$counts)

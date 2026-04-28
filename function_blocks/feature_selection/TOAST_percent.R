@@ -7,9 +7,7 @@ program_block_FS <- function(data, path_og_dataset='') {
   nmarker_percent = round(TOAST_percent_met*nrow(og_ref_met))
   hvp <- TOAST::findRefinx(og_ref_met, nmarker = nmarker_percent)
 
-  # multi_data$mix$mix_met <- multi_data$mix$mix_met[hvp,]
-  # multi_data$ref$ref_met <- multi_data$ref$ref_met[hvp,]
-  
+
   return(data[hvp,]) 
 }
 

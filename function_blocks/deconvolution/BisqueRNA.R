@@ -3,7 +3,6 @@
 program_block_DE = function(uni_data,path_og_dataset='') {
 
   if (!("BisqueRNA" %in% installed.packages())) {
-    # install.packages(pkgs = "BisqueRNA", repos = "https://cloud.r-project.org")
     devtools::install_github("cozygene/bisque")
   }
   library(BisqueRNA)

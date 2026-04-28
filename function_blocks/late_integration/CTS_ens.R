@@ -1,12 +1,8 @@
 program_block_li <- function(prop1,prop2,path_dataset) { 
 
-  # prop1 = l_pred$prop1
-  # prop2 = l_pred$prop2
-
  CTS_EnsDeconv_LS <- function(What, mygamma = 0.001, maxit = 1000,
                                  mysigma = 0.4, mybeta = 0.1) {
-      #What D*n*K
-      #W n*K
+
       i <- 1
       n <- dim(What[[1]])[1]
       K <- dim(What[[1]])[2]

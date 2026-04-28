@@ -36,7 +36,6 @@ program_block_PP <- function(data, path_og_dataset='', omic='') {
     return(MEs)
   }
   minMax <- function(x) {
-    #columns: features
     x = data.matrix(x)
     for (i in 1:ncol(x)) {
       x[,i] = (x[,i] - min(x[,i], na.rm = T)) / (max(x[,i], na.rm = T) - min(x[,i], na.rm = T))

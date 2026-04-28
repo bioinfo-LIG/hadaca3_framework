@@ -1,14 +1,3 @@
-# program_block_EI <- function(rna_unit,met_unit,path_dataset) { 
-
-#   # rna_unit contain mix, ref and ref_scRNA
-
-#   return(rna_unit)
-# }
-# import sys
-# from os import listdir
-# from rpy2 import robjects
-# from rpy2.robjects.packages import importr
-# base = importr("base")
 
 import MultiMAP
 import scanpy as sc
@@ -27,11 +16,6 @@ def program_block_EI(rna_unit,met_unit,path_og_dataset=""):
     common_genes_met = met_unit["mix"].index.intersection(met_unit["ref"].index)
     met_unit["mix"]  = met_unit["mix"].loc[common_genes_met]
     met_unit["ref"]  = met_unit["ref"].loc[common_genes_met]
-
-    # D_rna is t(mix_rna) in pandas dataframe
-    # T_rna is t(ref_bulkRNA)
-    # D_met is t(mix_met)
-    # T_met is t(ref_met)
 
 
     D_rna = rna_unit['mix'].T

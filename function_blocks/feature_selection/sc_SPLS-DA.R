@@ -4,7 +4,6 @@ program_block_FS <- function(data, path_og_dataset='') {
     sc = read_hdf5(path_og_dataset$ref)
     } else {sc = data}
     
-    #if (!(any(c("ref_concat","ref_integrated","ref_cluster","ref_binarypseudobulk_log") %in% names(sc)))) {stop("This FS method requires to run the PP set to concat, CCAintegration, cluster or binarypseudobulk_log")}
     ### SPLS-DA on sc
     if("metadata" %in% names(sc[[1]])){
         sc_data = sc[[1]]
@@ -25,9 +24,7 @@ program_block_FS <- function(data, path_og_dataset='') {
         data = lapply(data, function(x) list(counts = x$counts[choose_markers_scRNA,], metadata = x$metadata))
     } else {
         common_genes <- intersect(choose_markers_scRNA, rownames(data))
-        # data = data[choose_markers_scRNA,]
         data = data[common_genes,]
-
     }
     
     return(data)

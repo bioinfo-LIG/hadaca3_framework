@@ -12,8 +12,6 @@ program_block_PP <- function(data, path_og_dataset='', omic='') {
     return(mat)
   }
   
-  #multi_data$ref$ref_bulkRNA = normalize_matrix(multi_data$ref$ref_bulkRNA)
-  #multi_data$ref$ref_met = normalize_matrix(multi_data$ref$ref_met)
   data = normalize_matrix(data)
 
   return(data) 

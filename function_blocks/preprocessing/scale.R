@@ -12,9 +12,6 @@ program_block_PP <- function(data, path_og_dataset='', omic='') {
   } else {
     data = scale_matrix(data)
   }
-  
-  # multi_data$mix$mix_met = scale_matrix(multi_data$mix$mix_met)
-  # stopifnot()
-  
+   
   return(data) 
 }

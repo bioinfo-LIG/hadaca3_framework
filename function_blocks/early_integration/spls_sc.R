@@ -31,5 +31,5 @@ program_block_EI <- function(rna_unit,met_unit,path_dataset) {
 
   res_unit = list(mix=mix, ref = ref  )
   return(res_unit)
-  # return(rna_unit)
+
 }

@@ -1,7 +1,5 @@
 
 
-# pred_RNA = program_blockDE(uni_data = SP_data$RNA)
-# pred_met = program_blockDE(uni_data = SP_data$met)
 
 program_block_DE = function(uni_data,path_og_dataset='') {
   

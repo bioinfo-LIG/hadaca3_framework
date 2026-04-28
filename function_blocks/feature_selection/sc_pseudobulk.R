@@ -3,8 +3,7 @@ program_block_FS <- function(data, path_og_dataset='') {
   if (is.list(data)) {
     sc = data
   } else {sc = read_hdf5(path_og_dataset$ref)$ref_scRNA}
-  
-  #if (!(any(c("ref_concat","ref_integrated","ref_cluster","ref_binarypseudobulk_log") %in% names(sc)))) {stop("This FS method requires to run the PP set to concat, CCAintegration, cluster or binarypseudobulk_log")}
+
   
   # select markers based on t statistic on sc data
   metadata = sc[[1]]$metadata
@@ -13,10 +12,6 @@ program_block_FS <- function(data, path_og_dataset='') {
   t_statistics <- lapply(combn(unique(metadata$cell_type), 2, simplify = F), function(cts) {
       lapply(unique(metadata$dataset), function(ds) {
         idx_col = metadata$dataset == ds & metadata$cell_type %in% cts
-        # if (!any(idx_col) ) {
-        #   # message(cts," ", ds ,"NULL")
-        #   return(NULL)
-        # }
         counts_trunc = counts[, which(idx_col)]
 
       if (is.null(dim(counts_trunc)) || any(dim(counts_trunc) == 0)) {
@@ -55,10 +50,8 @@ program_block_FS <- function(data, path_og_dataset='') {
   if (is.list(data)) {
     data = lapply(data, function(x) list(counts = x$counts[rownames(res),], metadata = x$metadata))
   } else {
-    # which(rownames(res) %in% rownames(data))
     data = data[which(rownames(res) %in% rownames(data)),]
 
-    # data = data[rownames(res),]
     }
   
   return(data) 

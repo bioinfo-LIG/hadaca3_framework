@@ -2,9 +2,7 @@
 
 program_block_li <- function(prop1,prop2,path_dataset) { 
 
-  # prop1 = l_pred$prop1
-  # prop2 = l_pred$prop2
-  # path_dataset = l_pred$last_dataset
+
   mix = read_all_hdf5(path_dataset$mix,('mix'))$mix
   mix_rna = mix$mix_rna
   mix_met = mix$mix_met
