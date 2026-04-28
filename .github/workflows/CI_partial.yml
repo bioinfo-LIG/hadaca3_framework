@@ -2,21 +2,18 @@
 on:
   push:
     branches:
-      - '*' # Adjust this to your default branch
-  # schedule:
-  #   - cron: '0 2 * * *'  # Trigger daily at 2 AM UTC
-
+      - '*' 
 jobs:
   Continue_pipeline:
     runs-on: self-hosted
-    timeout-minutes: 20160  # run for two weeks   , previoulous :  5760  #run is allowed for 4 days max  
+    timeout-minutes: 20160  # run for up to two weeks   
     permissions:
       contents: write
     
     env:
       CONDA: "/home/ubuntu/miniconda3/etc/profile.d/conda.sh"
       CONDA_ENV_NAME: "hadaca3framework_env"
-      REPO_DIR: "/home/github-runner/projects/hadaca3_framework/"  # Adjust this to your repo path
+      REPO_DIR: "/home/github-runner/projects/hadaca3_framework/" 
       SNK_CORES: "2"
       MEM_MB: "32000"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -44,7 +41,6 @@ jobs:
             eval "$line"
           done
 
-      # shell: bash
       - name: download data
         run: |
           cd ${{ env.REPO_DIR }}
@@ -138,55 +134,6 @@ jobs:
           cd ${{ env.REPO_DIR }}
           echo "===== Log failled snapshot at $(date) ====="
           tail -n 200 log.txt
-
-      # - name : copy report if failure 
-      #   if : failure()  # always() always will run even if cancelled manually   #failure()
-      #   run : |
-      #     cd ${{ env.REPO_DIR }}
-      #     # this will still copy the last metaanalysis
-      #     mkdir -p ${{ github.workspace }}/public
-      #     cp 07_metaanalysis.html ${{ github.workspace }}/public/metaanalysis.html
-      #     cp -R 07_prep_metaanalysis_files   ${{ github.workspace }}/public/07_prep_metaanalysis_files
-      #     LATEST_REPORT=$(ls -t report-* | head -n 1)
-      #     cp $LATEST_REPORT ${{ github.workspace }}/public/nextflow-report.html
-      #     cp index.html ${{ github.workspace }}/public/
-      #     cp results_li.csv ${{ github.workspace }}/public/
-      #     cp results_ei.csv ${{ github.workspace }}/public/
-      #     ls -la ${{ github.workspace }}/public
-
-      # name: 
-      # - name: Check for errors and read logs 
-      #   if: failure()
-      #   run: |
-      #     echo "An error occurred. Checking log files for details..."
-      #     LOG_DIR=".snakemake/log/"
-
-      #     # Find the latest log file
-      #     LATEST_LOG=$(ls -t "$LOG_DIR" | head -n 1)
-
-      #     # Check if a log file was found
-      #     if [ -z "$LATEST_LOG" ]; then
-      #       echo "No log files found in the directory."
-      #       exit 1
-      #     fi
-      #     echo $LOG_DIR$LATEST_LOG
-      #     ERROR_LOGS=$(grep -A 5 "Error in rule" "$LOG_DIR$LATEST_LOG" | grep -oP 'log: \K.*?(?= \(check log file)')
-      #     echo $ERROR_LOGS
-      #     if [ -z "$ERROR_LOGS" ]; then
-      #       echo "No error logs found in Snakemake log."
-      #       exit 0
-      #     fi
-
-      #     # Display the contents of the error logs
-      #     echo "Errors found in the following log files:"
-      #     for LOG_FILE in $ERROR_LOGS; do
-      #       echo "--- $LOG_FILE ---"
-      #       if [ -f "$LOG_FILE" ]; then
-      #         cat "$LOG_FILE"
-      #       else
-      #         echo "Log file not found: $LOG_FILE"
-      #       fi
-      #     done
 
       - name: Deploy to GitHub Pages
         if: success() || failure() 

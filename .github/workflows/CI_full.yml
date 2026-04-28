@@ -24,7 +24,6 @@ jobs:
 
   CI_full_Pipeline_scheduled:
     if : false
-#     needs: check_date
 #     if: ${{ needs.check_date.outputs.should_run != 'false' }}
     runs-on: self-hosted
     timeout-minutes: 5760  

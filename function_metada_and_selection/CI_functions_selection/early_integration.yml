@@ -9,28 +9,26 @@
 #   short_name: Ocablk
 #   language: R
 
-concatscale:
-  path: function_blocks/early_integration/concat_scale.R 
-  short_name: Consc
-  language: R
+# concatscale:
+#   path: function_blocks/early_integration/concat_scale.R 
+#   short_name: Consc
+#   language: R
 
-concatnoscale:
-  path: function_blocks/early_integration/concat_noscale.R 
-  short_name: Cnosc
-  language: R
+# concatnoscale:
+#   path: function_blocks/early_integration/concat_noscale.R 
+#   short_name: Cnosc
+#   language: R
 
 # Kernel:
 #   path: function_blocks/early_integration/Kernel.R 
 #   short_name: Kern
 #   language: R
 
-# OT:
-#   path: function_blocks/early_integration/OT.py 
-#   short_name: OT
-#   language: python
+OT:
+  path: function_blocks/early_integration/OT.py 
+  short_name: OT
+  language: python
 
-
-###### python need to implement. 
 
 # multimap:
 #   path: function_blocks/early_integration/multimap.py 

@@ -9,16 +9,16 @@ LogNorm : #is working
   omic: [ANY]
 
 #### best pp function : 
-Scale :  #scale with sweep function  #must be a unique ID
-  path: function_blocks/preprocessing/scale.R
-  short_name: scal
-  omic: [ANY]
+# Scale :  #scale with sweep function  #must be a unique ID
+#   path: function_blocks/preprocessing/scale.R
+#   short_name: scal
+#   omic: [ANY]
 
-sccluster : # seurat created object
-  path: function_blocks/preprocessing/sc_cluster.R
-  short_name: sccl
-  create: [ref_cluster]
-  omic: [scRNA]
+# sccluster : # seurat created object
+#   path: function_blocks/preprocessing/sc_cluster.R
+#   short_name: sccl
+#   create: [ref_cluster]
+#   omic: [scRNA]
   
 
 
@@ -33,17 +33,17 @@ sccluster : # seurat created object
 #   short_name: scSc
 #   omic: [scRNA]
 
-scConcat :  #must be a unique ID  #should be sample-normalized  ?! how to add this ? 
-  path: function_blocks/preprocessing/sc_concat.R
-  short_name: scCo
-  create: [ref_concat]
-  omic: [scRNA]
+# scConcat :  #must be a unique ID  #should be sample-normalized  ?! how to add this ? 
+#   path: function_blocks/preprocessing/sc_concat.R
+#   short_name: scCo
+#   create: [ref_concat]
+#   omic: [scRNA]
 
-scbinarypseudobulklog : # maybe move to intermediate or early integration because it should change both scRNA and RNA (rescale)
-  path: function_blocks/preprocessing/sc_binarypseudobulk_log.R
-  short_name: scbpl
-  create: [ref_binarypseudobulk_log]
-  omic: [mixRNA,RNA,scRNA]
+# scbinarypseudobulklog : # maybe move to intermediate or early integration because it should change both scRNA and RNA (rescale)
+#   path: function_blocks/preprocessing/sc_binarypseudobulk_log.R
+#   short_name: scbpl
+#   create: [ref_binarypseudobulk_log]
+#   omic: [mixRNA,RNA,scRNA]
 
 
 

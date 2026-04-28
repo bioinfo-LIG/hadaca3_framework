@@ -1,15 +1,15 @@
 ##Working 
-# nnls :  #must be a unique ID
-#   path: function_blocks/deconvolution/nnls.R
-#   short_name: NNLS
+nnls :  #must be a unique ID
+  path: function_blocks/deconvolution/nnls.R
+  short_name: NNLS
 
 # lm :  #must be a unique ID
 #   path: function_blocks/deconvolution/lm.R
 #   short_name: LM
 
-epic :  #must be a unique ID
-  path: function_blocks/deconvolution/EPIC.R
-  short_name: EPIC
+# epic :  #must be a unique ID
+#   path: function_blocks/deconvolution/EPIC.R
+#   short_name: EPIC
 
 ##only with scrna
 # BisqueRNA : #Totest  #must be a unique ID
@@ -34,20 +34,20 @@ RLRpoisson :  #must be a unique ID
 #   path: function_blocks/deconvolution/RLR_nnls.R
 #   short_name: RLRn
 
-InstaPrism :  #working with RNA
-  path: function_blocks/deconvolution/InstaPrism.R
-  short_name: InstaPrism
-  omic:  [RNA,MET]
+# InstaPrism :  #working with RNA
+#   path: function_blocks/deconvolution/InstaPrism.R
+#   short_name: InstaPrism
+#   omic:  [RNA,MET]
   
-fardeep :  #working with RNA
-  path: function_blocks/deconvolution/fardeep.R
-  short_name: FARDEEP
-  omic:  [RNA]
+# fardeep :  #working with RNA
+#   path: function_blocks/deconvolution/fardeep.R
+#   short_name: FARDEEP
+#   omic:  [RNA]
 
-cibersort :  #must be a unique ID
-  path: function_blocks/deconvolution/cibersort.R
-  short_name: CIBERSORT
-  omic: [RNA]
+# cibersort :  #must be a unique ID
+#   path: function_blocks/deconvolution/cibersort.R
+#   short_name: CIBERSORT
+#   omic: [RNA]
 
 
 # DWLS :  #must be a unique ID
