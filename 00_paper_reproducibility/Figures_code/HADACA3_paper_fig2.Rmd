@@ -1,0 +1,496 @@
+---
+title: "HADACA3 Framework - Figure 2"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_document:
+    self_contained: false
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+---
+
+
+```{r, include=(FALSE)}
+knitr::opts_chunk$set(collapse=TRUE, comment = "#>", fig.width=9, fig.height=6, eval=TRUE, echo=FALSE, fig.align = 'center')#, results="hide")
+options(knitr.duplicate.label = "allow")
+```
+
+```{r params}
+if (!exists("method")) {method = "TeamJ"}
+if (!exists("type")) {type = "1"}
+# source("datasets.R")
+
+library(ggplot2)
+
+
+
+datasets_long = c(
+  "invitro", 
+  "invivo",
+  "insilicopseudobulk",
+  "insilicodirichletNoDep",
+  "insilicodirichletNoDep4CTsource",
+  "insilicodirichletNoDep6CTsource",
+  "insilicodirichletEMFA",
+  "insilicodirichletEMFAImmuneLowProp",
+  "insilicodirichletCopule"
+)
+datasets = c(
+  "VITR", "VIVO", "SBN5", 
+  "SDN5", "SDN4", "SDN6", 
+  "SDE5", "SDEL", "SDC5"
+)
+
+# when you change the number of datasets you should change the number of heatmaps displayed (last lines of chunk Heatmap_pred)
+```
+
+
+```{r read_output}
+ground_truth = lapply(datasets_long, function(x)
+  readRDS(paste0("HADACA3_TeamJ_Results/01_groundtruth/groundtruth",type,"_",x,"_pdac.rds")))
+names(ground_truth) = datasets
+
+prediction = lapply(datasets, function(x)
+  readRDS(paste0("HADACA3_TeamJ_Results/02_prediction/prediction",type,"_",method,"_",x,"_pdac.rds"))$prediction)
+names(prediction) = datasets
+
+time = lapply(datasets, function(x)
+  readRDS(paste0("HADACA3_TeamJ_Results/02_prediction/prediction",type,"_",method,"_",x,"_pdac.rds"))$time)
+names(time) = datasets
+
+score = lapply(datasets, function(x)
+  readRDS(paste0("HADACA3_TeamJ_Results/03_scores/score",type,"_",method,"_",x,"_pdac.rds")))
+names(score) = datasets
+```
+
+# Visualisations of your method
+
+## Table of scores for all datasets
+
+```{r Display_scores}
+score_df = data.frame(matrix(as.numeric(cbind(do.call(rbind,score),matrix(time,ncol=1))),nrow=length(datasets)))
+rownames(score_df) = datasets
+colnames(score_df) = c(names(score[[1]]), "time_exec")
+knitr::kable(
+  score_df, 
+  # format = "html",
+  table.attr = "style='overflow-x:auto; display:block; white-space:nowrap;'"
+)
+# kableExtra::scroll_box(score_table, width = "100%", height = "400px")
+```
+
+We have 9 different datasets: 
+
+- `VITR` : *in vitro* mixtures of pure cell types
+- `VIVO` : real *in vivo* bulk samples
+- `SBN5` : *in silico simulation* of pseudo-bulk from simulated single-cell data, for 5 cell-types
+- `SDN5` : *in silico simulation*, using a Dirichlet distribution, without correlation between features, for 5 cell-types
+- `SDN4` : *in silico simulation*, using a Dirichlet distribution, without correlation between features, for 4 cell-types
+- `SDN6` : *in silico simulation*, using a Dirichlet distribution, without correlation between features, for 6 cell-types
+- `SDE5` : *in silico simulation*, using a Dirichlet distribution, with EMFA dependence, for 5 cell-types
+- `SDEL` : *in silico simulation*, using a Dirichlet distribution, with EMFA dependence, for 5 cell-types including one with very low proportions
+- `SDC5` : *in silico simulation*, using a Dirichlet distribution, with copula dependence, for 5 cell-types
+
+For the `VIVO` dataset, we don't know the ground truth. However, we have a proxy for the relative proportions of cancer cell types, as measured on histological slides. Since we only have a partial ground truth, we can only compute correlation metrics on the cancer types.
+
+```{r Heatmap_pred, eval=FALSE}
+## Heatmap of predictions
+for (dataset in seq_along(prediction)) {
+  if (is.null(colnames(prediction[[dataset]]))) {
+  colnames(prediction[[dataset]]) = paste0("Sample",
+                             format(1:ncol(prediction[[dataset]]),
+                                    digits = ceiling(log10(ncol(prediction[[dataset]])))))
+  }
+}
+
+heatmaps = lapply(seq_along(prediction), function(x)
+  ComplexHeatmap::Heatmap(
+  prediction[[x]],
+  col = circlize::colorRamp2(seq(0, 1, length.out = 32), rev(heat.colors(32))),
+  column_title = datasets[x],
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  heatmap_legend_param = list(title = "Proportions"),
+  column_names_rot = 45                                                         # HB: do we even show them ?
+))
+heatmaps[[1]] + heatmaps[[2]] + heatmaps[[3]]
+#heatmaps[[4]] + heatmaps[[5]] + heatmaps[[6]]
+#heatmaps[[7]] + heatmaps[[8]] + heatmaps[[9]]
+```
+
+## Boxplot of the absolute error
+
+```{r abs_bias, warning=FALSE}
+color_pallet = RColorBrewer::brewer.pal(9, "Set1")
+names(color_pallet) = datasets
+color_pallet = color_pallet[which(!is.na(names(color_pallet)))]
+
+if (any(names(color_pallet) == "VIVO")) {
+  color_pallet_abs_bias = color_pallet[-which(names(color_pallet) == "VIVO")]
+} else {
+  color_pallet_abs_bias = color_pallet
+}
+
+ground_truth_corrected = ground_truth
+prediction_corrected = prediction
+for (data in seq_along(datasets)) {
+  if (nrow(prediction[[data]])==(nrow(ground_truth[[data]])-1)) { # we have 1 missing cell type in the ground truth
+    if (all(rownames(prediction[[data]]) %in% rownames(ground_truth[[data]]))) {
+      ground_truth_corrected[[data]] = ground_truth_corrected[[data]][rownames(prediction[[data]]),]
+    }
+    else {stop("Cell types names do not match")}
+  }
+  if (nrow(prediction[[data]])==(nrow(ground_truth[[data]])+1)) { # we have 1 missing cell type in the reference
+    if (all(rownames(ground_truth[[data]]) %in% rownames(prediction[[data]]))) {
+      extra_type = matrix(0,ncol=ncol(ground_truth[[data]]),nrow=1)
+      rownames(extra_type) = setdiff(rownames(prediction[[data]]),rownames(ground_truth[[data]]))
+      ground_truth_corrected[[data]] = rbind(ground_truth_corrected[[data]],extra_type)
+      prediction_corrected[[data]] = prediction_corrected[[data]][rownames(ground_truth_corrected[[data]]),]
+    }
+    else {stop("Cell types names do not match")}
+  }
+  prediction_corrected[[data]] = prediction_corrected[[data]][rownames(ground_truth_corrected[[data]]),]
+}
+
+cell_types = rownames(prediction[[1]])
+abs_bias = lapply(seq_along(prediction), function(x) abs(as.matrix(prediction_corrected[[x]][rownames(ground_truth_corrected[[x]]),]) - as.matrix(ground_truth_corrected[[x]][rownames(ground_truth_corrected[[x]]),])))
+abs_bias = data.frame(
+  Error = unlist(lapply(abs_bias,c)),
+  CellType = unlist(lapply(abs_bias, function(x) rep(rownames(x),ncol(x)))),
+  Dataset = unlist(lapply(seq_along(abs_bias), function(x) rep(datasets[x],ncol(abs_bias[[x]])*nrow(abs_bias[[x]]))))
+)
+abs_bias$Dataset = factor(abs_bias$Dataset, levels = datasets)
+abs_bias[abs_bias$Dataset == "VIVO", "Error"] = NA_real_
+
+# boxplots = lapply(cell_types, function(CT)
+#   ggplot(abs_bias, aes(x=Dataset, y=Error, color=Dataset)) +
+#     geom_boxplot() +
+#     geom_point() +
+#     xlab("") )
+#     #see::theme_modern(axis.text.angle = 40, axis.text.size = 5))
+# #ggpubr::ggarrange(plotlist = boxplots, common.legend = T, labels = cell_types)
+# #boxplots[[1]]
+
+boxplots = ggplot(abs_bias, aes(x=CellType, y=Error, fill=Dataset)) +
+  geom_boxplot(position = position_dodge2(padding = 0.2)) + # 
+  labs(
+    title = paste("Absolute bias among each cell type by your method on each dataset"),
+    x = "Cell types",
+    y = "Absolut bias"
+  ) +
+  theme_light() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom"
+  ) +
+  scale_fill_manual(
+    values = color_pallet_abs_bias
+  )
+plotly::layout(
+  plotly::ggplotly(boxplots), 
+  boxmode = "group",
+  legend = list(
+    # x = 0,
+    # y = -0.3,
+    # xanchor = 'left',
+    # yanchor = 'bottom',
+    orientation = 'h')
+)
+```
+
+Boxplot of absolute error between estimated proportions $\hat{\beta}$ and ground truth proportions $\beta$ for each cell type. For the sample $j$ and the cell type $i$,  $\text{Absolut error}_{i,j} = |\hat{\beta}_{i,j} - \beta_{i,j}|$
+
+## Boxplot of each metric
+
+```{r scores_samples_all_metrics, warning=FALSE}
+correlationP_1col = function(Ai_real, Ai_pred) {
+  # Ai_pred = Ai_pred[names(Ai_real)]
+  return(cor(Ai_real, Ai_pred, method = "pearson"))
+}
+correlationS_1col = function(Ai_real, Ai_pred) {
+  # Ai_pred = Ai_pred[names(Ai_real)]
+  return(cor(Ai_real, Ai_pred, method = "spearman"))
+}
+eval_Aitchison_1col = function(Ai_real, Ai_pred, min = 1e-9) {
+  # Ai_pred = Ai_pred[names(Ai_real)]
+  # Aitchison dist doesn't like 0 
+  Ai_real[Ai_real < min] = min
+  Ai_pred[Ai_pred < min] = min
+  return(coda.base::dist(rbind(Ai_real, Ai_pred), method = "aitchison")[1])
+}
+eval_Aitchison = function(A_real, A_pred, min = 1e-9) {
+  # A_pred = A_pred[rownames(A_real),]
+  # Aitchison dist doesn't like 0 
+  A_real[A_real < min] = min
+  A_pred[A_pred < min] = min
+  res = c()
+  for (i in seq(ncol(A_real))) {
+    res[i] = coda.base::dist(rbind(t(A_real[,i]), t(A_pred[,i])), method = "aitchison")[1]
+  }
+  res = res[!is.na(res)]
+  return(mean(res))
+}
+eval_RMSE = function(A_real, A_pred) {
+  return(sqrt(mean((A_real - A_pred)^2)))
+}
+eval_MAE = function (A_real, A_pred){
+  return(mean(abs(A_real - A_pred)))
+}
+
+
+
+
+df_metric = do.call(
+  what = rbind,
+  args = lapply(seq_along(datasets), function(data) {
+    
+    stopifnot(identical(rownames(prediction_corrected[[data]]), rownames(ground_truth_corrected[[data]])))
+    prediction_corrected[[data]][rownames(ground_truth_corrected[[data]]),]
+
+    data.frame(
+      "RMSE" = sapply(seq(ncol(ground_truth_corrected[[data]])), function(sample) {
+        eval_RMSE(ground_truth_corrected[[data]][,sample], prediction_corrected[[data]][,sample])
+      }),
+      "MAE" = sapply(seq(ncol(ground_truth_corrected[[data]])), function(sample) {
+        eval_MAE(ground_truth_corrected[[data]][,sample], prediction_corrected[[data]][,sample])
+      }),
+      "Aitchison" = sapply(seq(ncol(ground_truth_corrected[[data]])), function(sample) {
+        eval_Aitchison_1col(ground_truth_corrected[[data]][,sample], prediction_corrected[[data]][,sample])
+      }),
+      "Pearson" = sapply(seq(ncol(ground_truth_corrected[[data]])), function(sample) {
+        correlationP_1col(ground_truth_corrected[[data]][,sample], prediction_corrected[[data]][,sample])
+      }),
+      "Spearman" = sapply(seq(ncol(ground_truth_corrected[[data]])), function(sample) {
+        correlationS_1col(ground_truth_corrected[[data]][,sample], prediction_corrected[[data]][,sample])
+      }),
+      "Dataset" = datasets[data]
+    )
+  })
+)
+  
+df_metric = tidyr::pivot_longer(
+  data = df_metric,
+  cols = c("RMSE", "MAE", "Aitchison", "Pearson", "Spearman"),
+  names_to = "metric_name",
+  values_to = "metric_score"
+) 
+df_metric$Dataset = factor(df_metric$Dataset, levels = datasets)
+df_metric$metric_name = factor(df_metric$metric_name, levels = c("RMSE", "MAE", "Aitchison", "Pearson", "Spearman"))
+df_metric[(df_metric$Dataset == "VIVO") & (df_metric$metric_name %in% c("RMSE", "MAE", "Aitchison")), "metric_score"] = NA_real_
+
+# boxplots_metric = lapply(c("RMSE","MAE","Aitchison","Pearson","Spearman"), function(metric)
+#   ggplot(df_metric, aes(x=Dataset, y=get(metric), color=Dataset)) +
+#     geom_boxplot() +
+#     geom_point() +
+#     xlab("") +
+#     ylab(metric) )
+#     #see::theme_modern(axis.text.angle = 40, axis.text.size = 5))
+# #ggpubr::ggarrange(plotlist = boxplots_metric, common.legend = T)
+# boxplots_metric[[1]]
+# boxplots_metric[[2]]
+
+boxplots_metric = ggplot(df_metric, aes(x = Dataset, y = metric_score, fill = Dataset)) +
+  facet_wrap( ~ metric_name, scales = "free") +
+  geom_boxplot(position=position_dodge2(padding = 0.2)) +
+  labs(
+    title = paste("Samples' metrics results of your method on all datasets"),
+    x = "Datasets",
+    y = "Scores"
+  ) +
+  theme_light() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom",
+    axis.text.x = element_blank() # element_text(angle = 45, hjust = 1)
+  ) +
+  scale_fill_manual(
+    values = color_pallet
+  )
+pp = plotly::ggplotly(boxplots_metric, width = 900, height = 650)
+# pp
+pp = plotly::layout(pp, legend = list(orientation = 'h'))
+# pp
+invisible(
+  lapply(seq_along(pp$x$layout$shapes), \(i){ # ça ne regle pas entierement le pb, ils sont toujours sur les plots du dessus
+  
+  # if a strip shape (using the strip color), reduce the height of the strip box
+  if(isTRUE(pp$x$layout$shapes[[i]]$fillcolor == "rgba(179,179,179,1)")) {
+   pp$x$layout$shapes[[i]]$y1 <<- 18    # base at 23.379
+  }
+  # there are less annotations than shapes
+  if(i <= length(pp$x$layout$annotations)) { 
+    # reduce the font size of the strip text
+    if(any(pp$x$layout$annotations[[i]]$text %in% unique(df_metric$metric_name))) {
+      pp$x$layout$annotations[[i]]$font$size <<- 11   # base at 11.6895
+    }
+  }
+})
+)
+pp
+
+# plotly::layout(
+#   pp,
+#   legend = list(
+#     # x = 0,
+#     # y = 0,#-0.2,
+#     # xanchor = 'left',
+#     # yanchor = 'right',
+#     orientation = 'h'),
+#   # ggplotly make strip are on top of upper plot (which is not nice)
+#   # the simplest way (but ugly) is to add space for each strip position
+#   # yaxis = list(range = c(-0.05, max(df_metric[df_metric$metric_name == "RMSE", "metric_score"], na.rm = TRUE)))#,
+#   # yaxis2 = list(range = c(-0.5, 1)),
+#   # yaxis3 = list(range = c(-0.5, 1))
+# )
+```
+
+
+Boxplot of 15 or 30 samples for five different metrics : between estimated proportions and ground truth proportions for each cell type
+
+- Root Mean Squared Error: for the sample $j$, $\text{RMSE}_j = \sqrt{\frac{\sum_{i=1}^{N} \big(\hat{\beta}_{i,j}-\beta_{i,j}\big)^2}{N}}$.
+- Mean Absolut Error: for the sample $j$, $\text{MAE}_j = \frac{\sum_{i=1}^{N} \big|\hat{\beta}_{i,j}-\beta_{i,j}\big|}{N}$.
+- Aitchison distance: this distance use a isomorphism to transform a vector of proportions, true and estimated vectors for each samples, from the unity simplex to the real space (see https://en.wikipedia.org/wiki/Compositional_data#Aitchison_geometry). Then, an Euclidean distance is calculated between the transformed estimated vector of proportions and the transformed ground truth vector of proportions.
+- Pearson correlation: for the sample $j$, the Pearson correlation is calculated between the estimated vector of proportions $\hat{\beta}_j$ and the ground truth vector of proportions $\beta_j$.
+- Spearman correlation: for the sample $j$, the Spearman correlation is calculated between the estimated vector of proportions $\hat{\beta}_j$ and the ground truth vector of proportions $\beta_j$.
+
+
+
+## Scatter plots between truth and prediction
+
+```{r scatter_plot, warning=FALSE}
+df_scatter = do.call(
+  what = rbind,
+  args = lapply(seq_along(datasets), function(data) { # we remove in vivo
+    
+    prediction_data = t(prediction_corrected[[data]])
+    prediction_data = tidyr::pivot_longer(
+      as.data.frame(prediction_data),
+      cols = colnames(prediction_data),
+      names_to = "cell_type",
+      values_to = "pred_prop"
+    )
+    
+    ground_truth_data = t(ground_truth_corrected[[data]])
+    ground_truth_data = tidyr::pivot_longer(
+      as.data.frame(ground_truth_data),
+      cols = colnames(ground_truth_data),
+      names_to = "cell_type",
+      values_to = "true_prop"
+    )
+    
+    prop_data = cbind(prediction_data, ground_truth_data[,"true_prop"], Dataset = datasets[data])
+  })
+)
+df_scatter$Dataset = factor(df_scatter$Dataset, levels = datasets)
+df_scatter$cell_type = factor(df_scatter$cell_type, levels = rownames(ground_truth[[1]]))
+
+
+scatter_prop = ggplot(df_scatter) +
+  facet_wrap( ~ Dataset) +
+  geom_abline(intercept = 0, slope = 1, linetype = 3, linewidth = 0.25) +
+  geom_point(aes(x = true_prop, y = pred_prop, col = cell_type)) +
+  coord_cartesian(
+    xlim = c(0,1),
+    ylim = c(0,1)
+  ) +
+  labs(
+    x = "Ground truth proportion",
+    y = "Prediction",
+    title = paste("Proportions predicted by your method vs true ones for all datasets")
+  ) +
+  scale_x_continuous(
+    labels = scales::percent
+  ) +
+  scale_y_continuous(
+    labels = scales::percent
+  ) +
+  scale_color_discrete(
+    name = "Cell type"
+  ) +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+pp = plotly::ggplotly(scatter_prop, width = 900, height = 1000)
+# pp
+pp = plotly::layout(pp, legend = list(orientation = 'h'))
+# pp
+invisible(
+  lapply(seq_along(pp$x$layout$shapes), \(i){ # ça ne regle pas entierement le pb, ils sont toujours sur les plots du dessus
+  
+  # if a strip shape (using the strip color), reduce the height of the strip box
+  if(isTRUE(pp$x$layout$shapes[[i]]$fillcolor == "rgba(179,179,179,1)")) {
+   pp$x$layout$shapes[[i]]$y1 <<- 18    # base at 23.379
+  }
+  # there are less annotations than shapes
+  if(i <= length(pp$x$layout$annotations)) { 
+    # reduce the font size of the strip text
+    if(any(pp$x$layout$annotations[[i]]$text %in% unique(df_metric$metric_name))) {
+      pp$x$layout$annotations[[i]]$font$size <<- 11   # base at 11.6895
+    }
+  }
+})
+)
+pp
+```
+
+## Radar charts
+
+```{r scores_global_radarchart, fig.width=20, fig.height=11.25, warning=FALSE, message=FALSE, results='hide'}
+if (length(datasets) == 9) {
+  par(mfrow = c(3,3))
+} else if (length(datasets) > 1) {
+  par(mfrow = c(length(datasets) %/% 3, 3))
+}
+
+for (data in seq_along(datasets)) {
+  ground_truth_data = ground_truth[[data]]
+  
+  fake_worst_pred = apply(ground_truth_data, 2, function(prop) { 
+    tmp = rep(1e-9, length(prop))
+    tmp[which.min(prop)] = 1
+    return(tmp)
+  })
+  rownames(fake_worst_pred) = rownames(ground_truth_data)
+  
+  worst_RMSE = eval_RMSE(ground_truth_data, fake_worst_pred)
+  worst_MAE = eval_MAE(ground_truth_data, fake_worst_pred)
+  worst_Aitchison = eval_Aitchison(ground_truth_data, fake_worst_pred)
+  
+  
+  score_data = score[[data]]
+  
+  # We don't take the global score for the radar chart since it's a proxy of the area
+  df_radarplot = as.data.frame(rbind(
+    # rmse,       mae,       aitchison,        pearson_tot, pearson_col, pearson_row, spearman_tot, spearman_col, spearman_row
+    c(0,          0,         0,                1,           1,           1,           1,            1,            1), # the max/best value for each var
+    c(worst_RMSE, worst_MAE, worst_Aitchison, -1,          -1,          -1,          -1,           -1,           -1), # the min/worst value for each var
+    score_data[-1]
+  ))
+  
+  fmsb::radarchart(
+    df_radarplot, 
+    axistype=2, # add the max/best value of each axe (but I don't know how to add the min/worst)
+    
+    title = paste("Global metrics scores for your method\non dataset", datasets[data]),
+    #custom polygon
+    pcol=rgb(0.2,0.5,0.5,0.9), pfcol=rgb(0.2,0.5,0.5,0.5), plwd=4,
+   
+    #custom the grid
+    cglcol="grey", cglty=1, axislabcol="grey50", cglwd=0.8,
+   
+    #custom labels
+    vlcex=0.8
+  )
+  
+  # Comment HB: the visualization by a radar/spider plot is intrinsically linked to the aggregated score for defining the scope (min and max) for each variable.
+}
+par(mfrow = c(1,1))
+```
+
+# Session Information
+
+```{r, results="verbatim"}
+sessionInfo()
+```

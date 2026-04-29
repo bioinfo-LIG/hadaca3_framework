@@ -1,0 +1,437 @@
+---
+title: "HADACA3 Framework - Supplementary figure 12"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_document:
+    self_contained: false
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+---
+
+
+
+```{r, echo=FALSE, eval=TRUE}
+knitr::opts_chunk$set(collapse=TRUE, comment = "#>", fig.width=12, fig.height=12, eval=TRUE, echo=TRUE, results="verbatim", dpi=75)
+```
+
+```{r re_loading_pckgs, echo=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+theme_set(theme_light())
+library(wesanderson)
+library(RColorBrewer)
+library(ComplexHeatmap)
+
+library(pheatmap)
+library(grid)
+library(gridExtra)
+```
+
+# Load data
+
+```{r load_table}
+
+weights_corrected = c(rep(1/4*1/2,2),
+                    rep(1/4*1/4,4),
+                    rep(1/4*1/4,4),
+                    rep(1/4*1/2,2))
+
+metric_cols = c("pearson_row_norm","spearman_row_norm",
+                "pearson_tot_norm","pearson_col_norm","spearman_tot_norm","spearman_col_norm",
+                "rmse_norm","mae_norm","aitchison_norm","jsd_norm",
+                "sdid_norm","aid_norm")
+
+weighgeomMean = function(x) {
+  prod(mapply(function(a,b) a^b, a=x, b=weights_corrected), na.rm=T)^(1/sum(weights_corrected))
+}
+
+
+if(!exists("results_li")){
+  print("reading results li csv")
+  
+  all_functions_li = c(
+    'preprocessing_mixRNA', 'feature_selection_mixRNA',
+    'preprocessing_RNA', 'feature_selection_RNA',
+    'preprocessing_scRNA', 'feature_selection_scRNA', 'deconvolution_rna',
+    'preprocessing_mixMET', 'feature_selection_mixMET',
+    'preprocessing_MET', 'feature_selection_MET', 'deconvolution_met',
+    'late_integration'
+  )
+  results_li_all_dataset = rbind(
+    read.csv(file = gzfile("results_li_invitro_invivo_insilicopsuedobulk.csv.gz")),
+    read.csv(file = gzfile("results_li_EMFA_Copule_Immuneprop1.csv.gz")),
+    read.csv(file = gzfile("results_li_NODEP6_NODEP4_NODEP1.csv.gz"))
+  ) 
+  # results_li_all_dataset = read.csv(file = gzfile("../old_results_li_ei/results_li.csv.gz"))
+ # results_li_all_dataset = results_li_all_dataset[-(results_li_all_dataset$dataset == "51847637672785"),] % MAG:incorrect
+  results_li_all_dataset = results_li_all_dataset[
+  results_li_all_dataset$dataset != "51847637672785", ]
+  results_li_all_dataset = results_li_all_dataset[!is.na(results_li_all_dataset$dataset),]
+  results_li_all_dataset = results_li_all_dataset[!is.na(results_li_all_dataset$feature_selection_mixRNA),]
+  
+  
+  results_li_all_dataset[all_functions_li] = lapply(results_li_all_dataset[all_functions_li], as.factor)
+  
+  results_li = results_li_all_dataset %>% 
+    filter(feature_selection_mixMET != "Toastnbfs") %>% 
+    group_by(
+      preprocessing_mixRNA, feature_selection_mixRNA,
+      preprocessing_RNA, feature_selection_RNA,
+      preprocessing_scRNA, feature_selection_scRNA, deconvolution_rna,
+      preprocessing_mixMET, feature_selection_mixMET,
+      preprocessing_MET, feature_selection_MET, deconvolution_met,
+      late_integration
+    ) %>% 
+    summarise(
+      across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+    ) %>% 
+    as.data.frame()
+
+  
+  results_li = results_li[!is.na(results_li$feature_selection_RNA),] # One NA
+  
+  results_li$score_aggreg= apply(   #_corrected 
+    results_li[, metric_cols],
+    1,weighgeomMean
+  )
+
+}
+
+if(!exists("results_ei")){
+  print("reading reulsts ei csv")
+  
+  all_functions_ei = c(
+    'preprocessing_mixRNA', 'feature_selection_mixRNA',
+    'preprocessing_RNA', 'feature_selection_RNA',
+    'preprocessing_scRNA', 'feature_selection_scRNA',
+    'preprocessing_mixMET', 'feature_selection_mixMET',
+    'preprocessing_MET', 'feature_selection_MET',
+    'early_integration', 'deconvolution'
+  )
+  
+  results_ei_all_dataset = rbind(
+    read.csv(file = gzfile("results_ei_invitro_invivo_insilicopsuedobulk.csv.gz")),
+    read.csv(file = gzfile("results_ei_EMFA_Copule_Immuneprop1.csv.gz")),
+    read.csv(file = gzfile("results_ei_NODEP6_NODEP4_NODEP1.csv.gz"))
+  )  
+  # results_ei_all_dataset = read.csv(file = gzfile("../old_results_li_ei/merged_results_ei.csv.gz"))
+  
+  tmp = results_ei_all_dataset[results_ei_all_dataset$score_aggreg == 0,]
+  apply(tmp[,c("dataset", "ref", all_functions_ei)], 2, \(col_i){unique(col_i)})
+  # On a toutes les combinaisons possibles et tout les datasets, donc ce n'est pas liée à un truc en particulier 
+  # J'ai regardée le fichier 06, et on ne véréfie pas la somme à 1 mais on force bien à ce que tout les min soit à 1e-9
+  
+  
+  results_ei_all_dataset[all_functions_ei] = lapply(results_ei_all_dataset[all_functions_ei], as.factor)
+
+  results_ei = results_ei_all_dataset %>% 
+    filter(feature_selection_mixMET != "Toastnbfs") %>% 
+    group_by(
+      preprocessing_mixRNA, feature_selection_mixRNA,
+      preprocessing_RNA, feature_selection_RNA,
+      preprocessing_scRNA, feature_selection_scRNA,
+      preprocessing_mixMET, feature_selection_mixMET,
+      preprocessing_MET, feature_selection_MET,
+      deconvolution, early_integration
+    ) %>% 
+    summarise(
+      across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+    ) %>% 
+    as.data.frame()
+  
+  
+  results_ei = results_ei[results_ei$score_aggreg != 0,]
+
+
+
+
+
+  # recompute corrected aggregated score
+  results_ei$score_aggreg= apply(   #_corrected 
+    results_ei[, metric_cols],
+    1,weighgeomMean
+  )
+
+}
+```
+
+
+```{r ei_levels_def}
+levels(factor(results_ei$preprocessing_RNA))
+levels(factor(results_ei$feature_selection_RNA))
+
+levels(factor(results_ei$preprocessing_scRNA))
+levels(factor(results_ei$feature_selection_scRNA))
+
+levels(factor(results_ei$preprocessing_MET))
+levels(factor(results_ei$feature_selection_MET))
+
+levels(factor(results_ei$late_integration))
+
+levels(factor(results_ei$deconvolution))
+
+
+results_ei$preprocessing_RNA = factor(results_ei$preprocessing_RNA, levels = c("ppID", "LogNorm", "Scale"))
+results_ei$feature_selection_RNA = factor(results_ei$feature_selection_RNA, levels = c("fsID", "SCcluster", "scpseudobulk", "Toastbulknbfs", "Toastvst"))
+results_ei$preprocessing_scRNA = factor(results_ei$preprocessing_scRNA, levels = c("ppID", "sccluster", "scConcat", "LogNorm", "Scale", "scbinarypseudobulklog"))
+results_ei$feature_selection_scRNA = factor(results_ei$feature_selection_scRNA, levels = c("fsID", "SCcluster", "scpseudobulk", "Toastbulknbfs", "Toastvst"))
+results_ei$preprocessing_MET = factor(results_ei$preprocessing_MET, levels = c("ppID", "LogNorm", "Scale"))
+results_ei$feature_selection_MET = factor(results_ei$feature_selection_MET, levels = c("fsID", "maxdiscriminant", "mostmethylated", "SPLSDA", "Toastpercent")) # , "Toastnbfs"
+results_ei$late_integration = factor(results_ei$late_integration, levels = c("concatnoscale", "concatscale", "Kernel", "omicade4bulk", "OT"))
+results_ei$deconvolution = factor(results_ei$deconvolution, levels = c("nnls", "lm", "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic"))
+```
+
+```{r li_levels_def}
+levels(factor(results_li$preprocessing_RNA))
+levels(factor(results_li$feature_selection_RNA))
+
+levels(factor(results_li$preprocessing_scRNA))
+levels(factor(results_li$feature_selection_scRNA))
+
+levels(factor(results_li$preprocessing_MET))
+levels(factor(results_li$feature_selection_MET))
+
+levels(factor(results_li$deconvolution_rna))
+levels(factor(results_li$deconvolution_met))
+
+levels(factor(results_li$late_integration))
+
+
+results_li$preprocessing_RNA = factor(results_li$preprocessing_RNA, levels = c("ppID", "LogNorm", "Scale", "nopp")) # , "CPM"
+results_li$feature_selection_RNA = factor(results_li$feature_selection_RNA, levels = c("fsID", "SCcluster",  "scpseudobulk", "Toastbulknbfs", "Toastvst", "nofs")) # , "scSPLSDA"
+results_li$preprocessing_scRNA = factor(results_li$preprocessing_scRNA, levels = c("ppID", "LogNorm", "Scale", "scbinarypseudobulklog", "sccluster", "scConcat", "nopp")) # , "CPM", "scCCAintegration", "scScale"
+results_li$feature_selection_scRNA = factor(results_li$feature_selection_scRNA, levels = c("fsID", "SCcluster",  "scpseudobulk", "Toastbulknbfs", "Toastvst", "nofs")) # , "scSPLSDA"
+results_li$preprocessing_MET = factor(results_li$preprocessing_MET, levels = c("ppID", "LogNorm", "Scale", "nopp")) # , "normalize"
+results_li$feature_selection_MET = factor(results_li$feature_selection_MET, levels = c("fsID", "maxdiscriminant", "mostmethylated", "SPLSDA", "Toastpercent", "nofs")) # , "Toastnbfs"
+results_li$deconvolution_rna = factor(results_li$deconvolution_rna, levels = c("nnls", "lm",  "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic", "node"))
+results_li$deconvolution_met = factor(results_li$deconvolution_met, levels = c("nnls", "lm",  "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic", "node"))
+results_li$late_integration = factor(results_li$late_integration, levels = c("limean", "TunedJ", "limeanRMSE", "OnlyMet", "OnlyRna")) # , "liCtSens"
+```
+
+
+```{r color_choices}
+
+# wes_palette("Royal2") # for modules
+module_pal = wes_palette("Royal2")[c(2, 3, 5, 4, 1)]
+names(module_pal) = c("preprocessing", "feature_selection", "deconvolution", "late_integration", "late_integration")
+
+
+
+
+# generated with Claude
+
+all_levels = unique(c(
+  levels(results_ei$preprocessing_RNA),
+  levels(results_ei$feature_selection_RNA),
+  levels(results_ei$preprocessing_scRNA),
+  levels(results_ei$feature_selection_scRNA),
+  levels(results_ei$preprocessing_MET),
+  levels(results_ei$feature_selection_MET),
+  levels(results_ei$late_integration),
+  levels(results_ei$deconvolution),
+  levels(results_li$preprocessing_RNA),
+  levels(results_li$feature_selection_RNA),
+  levels(results_li$preprocessing_scRNA),
+  levels(results_li$feature_selection_scRNA),
+  levels(results_li$preprocessing_MET),
+  levels(results_li$feature_selection_MET),
+  levels(results_li$deconvolution_rna),
+  levels(results_li$deconvolution_met),
+  levels(results_li$late_integration)
+))
+
+id_levels    = all_levels[grepl(c("ID"), all_levels) | grepl(c("nopp"), all_levels) | grepl(c("nofs"), all_levels) | grepl(c("node"), all_levels) | grepl(c("OnlyRna"), all_levels) | grepl(c("OnlyMet"), all_levels)]
+other_levels = all_levels[!(grepl(c("ID"), all_levels) | grepl(c("nopp"), all_levels) | grepl(c("nofs"), all_levels) | grepl(c("node"), all_levels))]
+n_other = length(other_levels)
+
+palette_colors = colorRampPalette(
+  c(brewer.pal(7, "Set2"),
+    brewer.pal(7, "Dark2"),
+    brewer.pal(8, "Set3"))
+)(n_other)
+
+
+level_colors = c(
+  setNames(rep("grey60", length(id_levels)), id_levels),
+  setNames(palette_colors, other_levels)
+)
+
+# # Verification
+# scales::show_col(level_colors, ncol = 6)
+# print(level_colors)
+```
+
+
+
+# Supp Figure 12: Best module combination by late integration and dataset
+
+```{r}
+best = results_li_all_dataset %>%
+  group_by(late_integration, dataset) %>%
+  slice_max(score_aggreg, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1"                            = "VITR",
+      "invivo1"                             = "VIVO",
+      "insilicopseudobulk1"                 = "SBN5",
+      "insilicodirichletNoDep1"             = "SDN5",
+      "insilicodirichletNoDep4CTsource1"    = "SDN4",
+      "insilicodirichletNoDep6CTsource1"    = "SDN6",
+      "insilicodirichletEMFA1"              = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1"            = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5",
+      "SDN5", "SDN4", "SDN6",
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  arrange(late_integration, dataset)
+
+row_labels = paste0(best$late_integration, " | ", best$dataset)
+
+
+
+make_binary_cols = function(vec, prefix) {
+  vals = unique(vec)
+  result = purrr::map(vals, ~ as.integer(vec == .x))
+  names(result) = paste0(prefix, ".", vals)
+  as.data.frame(result)
+}
+
+binary_cols <- bind_cols(
+  make_binary_cols(best$preprocessing_mixRNA,     "PP_RNA"),
+  make_binary_cols(best$feature_selection_mixRNA, "FS_RNA"),
+  make_binary_cols(best$deconvolution_rna,        "Deconv_RNA"),
+  make_binary_cols(best$preprocessing_mixMET,     "PP_DNAm"),
+  make_binary_cols(best$feature_selection_mixMET, "FS_DNAm"),
+  make_binary_cols(best$deconvolution_met,        "Deconv_DNAm")
+)
+
+binary_matrix = as.matrix(binary_cols)
+rownames(binary_matrix) = row_labels
+
+score_matrix = matrix(
+  round(best$score_aggreg, 3),
+  ncol = 1,
+  dimnames = list(row_labels, "Score aggreg")
+)
+
+row_annot = data.frame(
+  Dataset     = as.character(best$dataset),
+  Integration = best$late_integration,
+  row.names   = row_labels
+)
+
+integ_colors = list(
+  Integration = level_colors[levels(best$late_integration)],
+  Dataset = setNames(
+    brewer.pal(n_distinct(best$dataset), "Pastel1"),
+    levels(best$dataset)
+  )
+)
+
+
+
+
+full_matrix = cbind(score_matrix, binary_matrix)
+
+col_annot_full <- data.frame(
+  Module = c(
+    "Score aggreg",
+    rep("PP RNA",     n_distinct(best$preprocessing_mixRNA)),
+    rep("FS RNA",     n_distinct(best$feature_selection_mixRNA)),
+    rep("Deconv RNA", n_distinct(best$deconvolution_rna)),
+    rep("PP DNAm",    n_distinct(best$preprocessing_mixMET)),
+    rep("FS DNAm",    n_distinct(best$feature_selection_mixMET)),
+    rep("Deconv DNAm",n_distinct(best$deconvolution_met))
+  ),
+  row.names = colnames(full_matrix)
+)
+
+module_colors <- list(Module = c(
+  "Score aggreg"      = "#FFD700",
+  "PP RNA"     = "#4E79A7",
+  "FS RNA"     = "#76B7B2",
+  "Deconv RNA" = "#59A14F",
+  "PP DNAm"    = "#E15759",
+  "FS DNAm"    = "#F28E2B",
+  "Deconv DNAm"= "#9C755F"
+))
+
+gaps_col <- cumsum(c(
+  1,
+  n_distinct(best$preprocessing_mixRNA),
+  n_distinct(best$feature_selection_mixRNA),
+  n_distinct(best$deconvolution_rna),
+  n_distinct(best$preprocessing_mixMET),
+  n_distinct(best$feature_selection_mixMET)
+))
+
+gaps_row = cumsum(table(best$late_integration)[unique(best$late_integration)])
+gaps_row = gaps_row[-length(gaps_row)]
+
+
+
+
+full_matrix_colored = full_matrix
+full_matrix_colored[, "Score aggreg"] = full_matrix[, "Score aggreg"] + 2  
+
+
+
+n_yellow = 100
+color_scale = c(
+  "white", # not selected
+  "black", # selected
+  colorRampPalette(c("#FFF7BC", "#FEC44F", "#D95F0E"))(n_yellow)
+)
+
+breaks_scale = c(
+  -0.5, 0.5, 1.5, 
+  seq(2, 3, length.out = n_yellow + 1)
+)
+
+display_matrix = matrix(
+  "",
+  nrow = nrow(full_matrix),
+  ncol = ncol(full_matrix),
+  dimnames = dimnames(full_matrix)
+)
+display_matrix[, "Score aggreg"] = sprintf("%.3f", full_matrix[, "Score aggreg"])
+
+
+
+pdf("heatmap_best_pipeline_late.pdf", width = 15, height = 12)
+pheatmap(
+  full_matrix_colored,
+  color             = color_scale,
+  breaks            = breaks_scale,
+  cluster_rows      = FALSE,
+  cluster_cols      = FALSE,
+  annotation_col    = col_annot_full,
+  annotation_row    = row_annot,
+  annotation_colors = c(module_colors, integ_colors),
+  display_numbers   = display_matrix,
+  number_color      = "black",
+  fontsize_number   = 6,
+  show_rownames     = TRUE,
+  show_colnames     = TRUE,
+  fontsize          = 14,
+  fontsize_row      = 12,
+  fontsize_col      = 12,
+  angle_col         = 315,
+  gaps_col          = gaps_col,
+  gaps_row          = gaps_row,
+  legend_breaks     = c(0, 1, 2, 2.5, 3),
+  legend_labels     = c("", "Selected", "0.0", "0.5", "1.0"),
+  main              = "Best early integration pipeline per integration method and dataset"
+)
+dev.off()
+```
+
+

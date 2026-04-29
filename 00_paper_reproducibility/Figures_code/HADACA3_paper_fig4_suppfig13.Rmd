@@ -1,0 +1,888 @@
+---
+title: "HADACA3 Framework - Figure 4 and supplementary figure 13"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_document:
+    self_contained: false
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+---
+
+
+
+```{r, echo=FALSE, eval=TRUE}
+knitr::opts_chunk$set(collapse=TRUE, comment = "#>", fig.width=12, fig.height=12, eval=TRUE, echo=TRUE, results="verbatim", dpi=75)
+```
+
+```{r re_loading_pckgs, echo=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+theme_set(theme_light())
+library(wesanderson)
+library(RColorBrewer)
+library(ComplexHeatmap)
+```
+
+# Load data
+
+```{r load_table}
+
+weights_corrected = c(rep(1/4*1/2,2),
+                    rep(1/4*1/4,4),
+                    rep(1/4*1/4,4),
+                    rep(1/4*1/2,2))
+
+metric_cols = c("pearson_row_norm","spearman_row_norm",
+                "pearson_tot_norm","pearson_col_norm","spearman_tot_norm","spearman_col_norm",
+                "rmse_norm","mae_norm","aitchison_norm","jsd_norm",
+                "sdid_norm","aid_norm")
+
+weighgeomMean = function(x) {
+  prod(mapply(function(a,b) a^b, a=x, b=weights_corrected), na.rm=T)^(1/sum(weights_corrected))
+}
+
+
+if(!exists("results_li")){
+  print("reading results li csv")
+  
+  all_functions_li = c(
+    'preprocessing_mixRNA', 'feature_selection_mixRNA',
+    'preprocessing_RNA', 'feature_selection_RNA',
+    'preprocessing_scRNA', 'feature_selection_scRNA', 'deconvolution_rna',
+    'preprocessing_mixMET', 'feature_selection_mixMET',
+    'preprocessing_MET', 'feature_selection_MET', 'deconvolution_met',
+    'late_integration'
+  )
+  results_li_all_dataset = rbind(
+    read.csv(file = gzfile("results_li_invitro_invivo_insilicopsuedobulk.csv.gz")),
+    read.csv(file = gzfile("results_li_EMFA_Copule_Immuneprop1.csv.gz")),
+    read.csv(file = gzfile("results_li_NODEP6_NODEP4_NODEP1.csv.gz"))
+  ) 
+  # results_li_all_dataset = read.csv(file = gzfile("../old_results_li_ei/results_li.csv.gz"))
+ # results_li_all_dataset = results_li_all_dataset[-(results_li_all_dataset$dataset == "51847637672785"),] % MAG:incorrect
+  results_li_all_dataset = results_li_all_dataset[
+  results_li_all_dataset$dataset != "51847637672785", ]
+  results_li_all_dataset = results_li_all_dataset[!is.na(results_li_all_dataset$dataset),]
+  results_li_all_dataset = results_li_all_dataset[!is.na(results_li_all_dataset$feature_selection_mixRNA),]
+  
+  
+  results_li_all_dataset[all_functions_li] = lapply(results_li_all_dataset[all_functions_li], as.factor)
+  
+  results_li = results_li_all_dataset %>% 
+    filter(feature_selection_mixMET != "Toastnbfs") %>% 
+    group_by(
+      preprocessing_mixRNA, feature_selection_mixRNA,
+      preprocessing_RNA, feature_selection_RNA,
+      preprocessing_scRNA, feature_selection_scRNA, deconvolution_rna,
+      preprocessing_mixMET, feature_selection_mixMET,
+      preprocessing_MET, feature_selection_MET, deconvolution_met,
+      late_integration
+    ) %>% 
+    summarise(
+      across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+    ) %>% 
+    as.data.frame()
+
+  
+  results_li = results_li[!is.na(results_li$feature_selection_RNA),] # One NA
+  
+  results_li$score_aggreg= apply(   #_corrected 
+    results_li[, metric_cols],
+    1,weighgeomMean
+  )
+
+}
+
+if(!exists("results_ei")){
+  print("reading reulsts ei csv")
+  
+  all_functions_ei = c(
+    'preprocessing_mixRNA', 'feature_selection_mixRNA',
+    'preprocessing_RNA', 'feature_selection_RNA',
+    'preprocessing_scRNA', 'feature_selection_scRNA',
+    'preprocessing_mixMET', 'feature_selection_mixMET',
+    'preprocessing_MET', 'feature_selection_MET',
+    'early_integration', 'deconvolution'
+  )
+  
+  results_ei_all_dataset = rbind(
+    read.csv(file = gzfile("results_ei_invitro_invivo_insilicopsuedobulk.csv.gz")),
+    read.csv(file = gzfile("results_ei_EMFA_Copule_Immuneprop1.csv.gz")),
+    read.csv(file = gzfile("results_ei_NODEP6_NODEP4_NODEP1.csv.gz"))
+  )  
+  # results_ei_all_dataset = read.csv(file = gzfile("../old_results_li_ei/merged_results_ei.csv.gz"))
+  
+  tmp = results_ei_all_dataset[results_ei_all_dataset$score_aggreg == 0,]
+  apply(tmp[,c("dataset", "ref", all_functions_ei)], 2, \(col_i){unique(col_i)})
+  # On a toutes les combinaisons possibles et tout les datasets, donc ce n'est pas liée à un truc en particulier 
+  # J'ai regardée le fichier 06, et on ne véréfie pas la somme à 1 mais on force bien à ce que tout les min soit à 1e-9
+  
+  
+  results_ei_all_dataset[all_functions_ei] = lapply(results_ei_all_dataset[all_functions_ei], as.factor)
+
+  results_ei = results_ei_all_dataset %>% 
+    filter(feature_selection_mixMET != "Toastnbfs") %>% 
+    group_by(
+      preprocessing_mixRNA, feature_selection_mixRNA,
+      preprocessing_RNA, feature_selection_RNA,
+      preprocessing_scRNA, feature_selection_scRNA,
+      preprocessing_mixMET, feature_selection_mixMET,
+      preprocessing_MET, feature_selection_MET,
+      deconvolution, early_integration
+    ) %>% 
+    summarise(
+      across(where(is.numeric), \(x) mean(x, na.rm = TRUE)), .groups = "drop"
+    ) %>% 
+    as.data.frame()
+  
+  
+  results_ei = results_ei[results_ei$score_aggreg != 0,]
+
+
+
+
+
+  # recompute corrected aggregated score
+  results_ei$score_aggreg= apply(   #_corrected 
+    results_ei[, metric_cols],
+    1,weighgeomMean
+  )
+
+}
+```
+
+
+```{r ei_levels_def}
+levels(factor(results_ei$preprocessing_RNA))
+levels(factor(results_ei$feature_selection_RNA))
+
+levels(factor(results_ei$preprocessing_scRNA))
+levels(factor(results_ei$feature_selection_scRNA))
+
+levels(factor(results_ei$preprocessing_MET))
+levels(factor(results_ei$feature_selection_MET))
+
+levels(factor(results_ei$early_integration))
+
+levels(factor(results_ei$deconvolution))
+
+
+results_ei$preprocessing_RNA = factor(results_ei$preprocessing_RNA, levels = c("ppID", "LogNorm", "Scale"))
+results_ei$feature_selection_RNA = factor(results_ei$feature_selection_RNA, levels = c("fsID", "SCcluster", "scpseudobulk", "Toastbulknbfs", "Toastvst"))
+results_ei$preprocessing_scRNA = factor(results_ei$preprocessing_scRNA, levels = c("ppID", "sccluster", "scConcat", "LogNorm", "Scale", "scbinarypseudobulklog"))
+results_ei$feature_selection_scRNA = factor(results_ei$feature_selection_scRNA, levels = c("fsID", "SCcluster", "scpseudobulk", "Toastbulknbfs", "Toastvst"))
+results_ei$preprocessing_MET = factor(results_ei$preprocessing_MET, levels = c("ppID", "LogNorm", "Scale"))
+results_ei$feature_selection_MET = factor(results_ei$feature_selection_MET, levels = c("fsID", "maxdiscriminant", "mostmethylated", "SPLSDA", "Toastpercent")) # , "Toastnbfs"
+results_ei$early_integration = factor(results_ei$early_integration, levels = c("concatnoscale", "concatscale", "Kernel", "omicade4bulk", "OT"))
+results_ei$deconvolution = factor(results_ei$deconvolution, levels = c("nnls", "lm", "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic"))
+```
+
+```{r li_levels_def}
+levels(factor(results_li$preprocessing_RNA))
+levels(factor(results_li$feature_selection_RNA))
+
+levels(factor(results_li$preprocessing_scRNA))
+levels(factor(results_li$feature_selection_scRNA))
+
+levels(factor(results_li$preprocessing_MET))
+levels(factor(results_li$feature_selection_MET))
+
+levels(factor(results_li$deconvolution_rna))
+levels(factor(results_li$deconvolution_met))
+
+levels(factor(results_li$late_integration))
+
+
+results_li$preprocessing_RNA = factor(results_li$preprocessing_RNA, levels = c("ppID", "LogNorm", "Scale", "nopp")) # , "CPM"
+results_li$feature_selection_RNA = factor(results_li$feature_selection_RNA, levels = c("fsID", "SCcluster",  "scpseudobulk", "Toastbulknbfs", "Toastvst", "nofs")) # , "scSPLSDA"
+results_li$preprocessing_scRNA = factor(results_li$preprocessing_scRNA, levels = c("ppID", "LogNorm", "Scale", "scbinarypseudobulklog", "sccluster", "scConcat", "nopp")) # , "CPM", "scCCAintegration", "scScale"
+results_li$feature_selection_scRNA = factor(results_li$feature_selection_scRNA, levels = c("fsID", "SCcluster",  "scpseudobulk", "Toastbulknbfs", "Toastvst", "nofs")) # , "scSPLSDA"
+results_li$preprocessing_MET = factor(results_li$preprocessing_MET, levels = c("ppID", "LogNorm", "Scale", "nopp")) # , "normalize"
+results_li$feature_selection_MET = factor(results_li$feature_selection_MET, levels = c("fsID", "maxdiscriminant", "mostmethylated", "SPLSDA", "Toastpercent", "nofs")) # , "Toastnbfs"
+results_li$deconvolution_rna = factor(results_li$deconvolution_rna, levels = c("nnls", "lm",  "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic", "node"))
+results_li$deconvolution_met = factor(results_li$deconvolution_met, levels = c("nnls", "lm",  "nnlslargeref", "RLR", "RLRnnls", "RLRpoisson", "epic", "node"))
+results_li$late_integration = factor(results_li$late_integration, levels = c("limean", "TunedJ", "limeanRMSE", "OnlyMet", "OnlyRna")) # , "liCtSens"
+```
+
+
+```{r color_choices}
+
+# wes_palette("Royal2") # for modules
+module_pal = wes_palette("Royal2")[c(2, 3, 5, 4, 1)]
+names(module_pal) = c("preprocessing", "feature_selection", "deconvolution", "early_integration", "late_integration")
+
+
+
+
+# generated with Claude
+
+all_levels = unique(c(
+  levels(results_ei$preprocessing_RNA),
+  levels(results_ei$feature_selection_RNA),
+  levels(results_ei$preprocessing_scRNA),
+  levels(results_ei$feature_selection_scRNA),
+  levels(results_ei$preprocessing_MET),
+  levels(results_ei$feature_selection_MET),
+  levels(results_ei$early_integration),
+  levels(results_ei$deconvolution),
+  levels(results_li$preprocessing_RNA),
+  levels(results_li$feature_selection_RNA),
+  levels(results_li$preprocessing_scRNA),
+  levels(results_li$feature_selection_scRNA),
+  levels(results_li$preprocessing_MET),
+  levels(results_li$feature_selection_MET),
+  levels(results_li$deconvolution_rna),
+  levels(results_li$deconvolution_met),
+  levels(results_li$late_integration)
+))
+
+id_levels    = all_levels[grepl(c("ID"), all_levels) | grepl(c("nopp"), all_levels) | grepl(c("nofs"), all_levels) | grepl(c("node"), all_levels) | grepl(c("OnlyRna"), all_levels) | grepl(c("OnlyMet"), all_levels)]
+other_levels = all_levels[!(grepl(c("ID"), all_levels) | grepl(c("nopp"), all_levels) | grepl(c("nofs"), all_levels) | grepl(c("node"), all_levels))]
+n_other = length(other_levels)
+
+palette_colors = colorRampPalette(
+  c(brewer.pal(7, "Set2"),
+    brewer.pal(7, "Dark2"),
+    brewer.pal(8, "Set3"))
+)(n_other)
+
+
+level_colors = c(
+  setNames(rep("grey60", length(id_levels)), id_levels),
+  setNames(palette_colors, other_levels)
+)
+
+# # Verification
+# scales::show_col(level_colors, ncol = 6)
+# print(level_colors)
+```
+
+
+
+# Panel A: Median score aggreg by integration method
+
+```{r median_score_aggreg_barplot}
+median_early = results_ei_all_dataset %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1" = "VITR", 
+      "invivo1" = "VIVO",
+      "insilicopseudobulk1" = "SBN5",
+      "insilicodirichletNoDep1" = "SDN5",
+      "insilicodirichletNoDep4CTsource1" = "SDN4",
+      "insilicodirichletNoDep6CTsource1" = "SDN6",
+      "insilicodirichletEMFA1" = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1" = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5", 
+      "SDN5", "SDN4", "SDN6", 
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  group_by(dataset, early_integration) %>%
+  summarise(median_score = median(score_aggreg, na.rm = TRUE), .groups = "drop") %>%
+  rename(method = early_integration) %>%
+  mutate(type = "Early")
+
+
+median_late = results_li_all_dataset %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1" = "VITR", 
+      "invivo1" = "VIVO",
+      "insilicopseudobulk1" = "SBN5",
+      "insilicodirichletNoDep1" = "SDN5",
+      "insilicodirichletNoDep4CTsource1" = "SDN4",
+      "insilicodirichletNoDep6CTsource1" = "SDN6",
+      "insilicodirichletEMFA1" = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1" = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5",
+      "SDN5", "SDN4", "SDN6",
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  filter(!late_integration %in% c("OnlyMet", "OnlyRna")) %>%
+  group_by(dataset, late_integration) %>%
+  summarise(median_score = median(score_aggreg, na.rm = TRUE), .groups = "drop") %>%
+  rename(method = late_integration) %>%
+  mutate(type = "Late")
+
+
+median_uniomic = results_li_all_dataset %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1" = "VITR", 
+      "invivo1" = "VIVO",
+      "insilicopseudobulk1" = "SBN5",
+      "insilicodirichletNoDep1" = "SDN5",
+      "insilicodirichletNoDep4CTsource1" = "SDN4",
+      "insilicodirichletNoDep6CTsource1" = "SDN6",
+      "insilicodirichletEMFA1" = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1" = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5", 
+      "SDN5", "SDN4", "SDN6",
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  filter(late_integration %in% c("OnlyMet", "OnlyRna")) %>%
+  group_by(dataset, late_integration) %>%
+  summarise(median_score = median(score_aggreg, na.rm = TRUE), .groups = "drop") %>%
+  rename(method = late_integration) %>%
+  mutate(type = "Uni-omic")
+
+
+
+
+median_all = bind_rows(median_early, median_late, median_uniomic) %>%
+  mutate(
+    type = factor(type, levels = c("Uni-omic", "Late", "Early")),
+    method = factor(method)
+  )
+
+
+
+
+early_methods = levels(median_early$method)
+late_methods = unique(median_late$method)
+uniomic_methods = unique(median_uniomic$method)
+
+method_order = c(
+  as.character(early_methods),
+  as.character(late_methods),
+  as.character(uniomic_methods)
+)
+
+median_all = median_all %>%
+  mutate(method = factor(method, levels = method_order))
+
+method_colors = c(
+  setNames(
+    RColorBrewer::brewer.pal(max(3, length(early_methods)), "Reds")[1:length(early_methods)],
+    early_methods
+  ),
+  setNames(
+    RColorBrewer::brewer.pal(max(3, length(late_methods)), "Blues")[1:length(late_methods)],
+    late_methods
+  ),
+  setNames(c("grey40", "grey60"), uniomic_methods)
+)
+
+
+
+
+
+p_median = ggplot(median_all,
+                   aes(x = dataset, y = median_score, fill = method)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_text(
+    aes(label = round(median_score, 2), group = method),
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    vjust = 0.3,
+    hjust = -0.1,
+    angle = 90,
+    size = 1.5
+  ) +
+  scale_fill_manual(
+    name = "Method",
+    values = method_colors,
+    breaks = c(early_methods, late_methods, uniomic_methods)
+  ) +
+  labs(x = element_blank(), y = "Median aggregated score") +
+  ylim(0, 1.15) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "right"
+  ) +
+  guides(fill = guide_legend(
+    ncol = 1,
+    override.aes = list(size = 3)
+  ))
+
+ggsave("barplot_median_all_integration.pdf", plot = p_median, width = 7, height = 3)
+```
+
+
+# Panel B: Top score aggreg by integration method
+
+```{r top_score_aggreg_barplot}
+top_early = results_ei_all_dataset %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1" = "VITR", 
+      "invivo1" = "VIVO",
+      "insilicopseudobulk1" = "SBN5",
+      "insilicodirichletNoDep1" = "SDN5",
+      "insilicodirichletNoDep4CTsource1" = "SDN4",
+      "insilicodirichletNoDep6CTsource1" = "SDN6",
+      "insilicodirichletEMFA1" = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1" = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5", 
+      "SDN5", "SDN4", "SDN6",
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  group_by(dataset, early_integration) %>%
+  summarise(top_score = max(score_aggreg, na.rm = TRUE), .groups = "drop") %>%
+  rename(method = early_integration) %>%
+  mutate(type = "Early")
+
+
+top_late = results_li_all_dataset %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1" = "VITR", 
+      "invivo1" = "VIVO",
+      "insilicopseudobulk1" = "SBN5",
+      "insilicodirichletNoDep1" = "SDN5",
+      "insilicodirichletNoDep4CTsource1" = "SDN4",
+      "insilicodirichletNoDep6CTsource1" = "SDN6",
+      "insilicodirichletEMFA1" = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1" = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5", 
+      "SDN5", "SDN4", "SDN6",
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  filter(!late_integration %in% c("OnlyMet", "OnlyRna")) %>%
+  group_by(dataset, late_integration) %>%
+  summarise(top_score = max(score_aggreg, na.rm = TRUE), .groups = "drop") %>%
+  rename(method = late_integration) %>%
+  mutate(type = "Late")
+
+
+top_uniomic = results_li_all_dataset %>%
+  mutate(
+    dataset = recode(dataset,
+      "invitro1" = "VITR", "invivo1" = "VIVO",
+      "insilicopseudobulk1" = "SBN5",
+      "insilicodirichletNoDep1" = "SDN5",
+      "insilicodirichletNoDep4CTsource1" = "SDN4",
+      "insilicodirichletNoDep6CTsource1" = "SDN6",
+      "insilicodirichletEMFA1" = "SDE5",
+      "insilicodirichletEMFAImmuneLowProp1" = "SDEL",
+      "insilicodirichletCopule1" = "SDC5"
+    ),
+    dataset = factor(dataset, levels = c(
+      "VITR", "VIVO", "SBN5", 
+      "SDN5", "SDN4", "SDN6",
+      "SDE5", "SDEL", "SDC5"
+    ))
+  ) %>%
+  filter(late_integration %in% c("OnlyMet", "OnlyRna")) %>%
+  group_by(dataset, late_integration) %>%
+  summarise(top_score = max(score_aggreg, na.rm = TRUE), .groups = "drop") %>%
+  rename(method = late_integration) %>%
+  mutate(type = "Uni-omic")
+
+
+top_all = bind_rows(top_early, top_late, top_uniomic) %>%
+  mutate(
+    type = factor(type, levels = c("Uni-omic", "Late", "Early")),
+    method = factor(method)
+  )
+
+
+
+early_methods = levels(top_early$method)
+late_methods = unique(top_late$method)
+uniomic_methods = unique(top_uniomic$method)
+
+method_order = c(
+  as.character(early_methods),
+  as.character(late_methods),
+  as.character(uniomic_methods)
+)
+
+top_all = top_all %>%
+  mutate(method = factor(method, levels = method_order))
+
+method_colors = c(
+  setNames(
+    RColorBrewer::brewer.pal(max(3, length(early_methods)), "Reds")[1:length(early_methods)],
+    early_methods
+  ),
+  setNames(
+    RColorBrewer::brewer.pal(max(3, length(late_methods)), "Blues")[1:length(late_methods)],
+    late_methods
+  ),
+  setNames(c("grey40", "grey60"), uniomic_methods)
+)
+
+
+
+
+p = ggplot(top_all, aes(x = dataset, y = top_score, fill = method)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  scale_fill_manual(
+    name = "Method",
+    values = method_colors
+  ) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_text(
+    aes(label = round(top_score, 2), group = method),
+    stat = "identity",
+    position = position_dodge(width = 0.9),
+    vjust = 0.3,
+    hjust = -0.1,
+    angle = 90,
+    size = 1.5
+  ) +
+  scale_fill_manual(
+    name   = "Method",
+    values = method_colors,
+    breaks = c(early_methods, late_methods, uniomic_methods)  # ordre dans la légende
+  ) +
+  labs(x = element_blank(), y = "Top aggregated score") +
+  ylim(0, 1.15) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "right"
+  ) +
+  guides(fill = guide_legend(
+    ncol = 1,
+    override.aes = list(size = 3)
+  ))
+
+ggsave("barplot_top_all_integration.pdf", plot = p, width = 7, height = 3)
+```
+
+
+
+# Top module combination by integration method: supp table 14 and 15
+
+## Early_integration
+
+```{r top_modules_by_EI}
+results_ei_top_by_EI = results_ei %>%
+  group_by(early_integration, .groups = "keep") %>% 
+  summarise(maxScore = max(score_aggreg)) 
+
+idx_ei_top_by_EI = c()
+for (i in 1:5) {
+  idx_ei_top_by_EI = c(idx_ei_top_by_EI, which(results_ei$early_integration == pull(results_ei_top_by_EI[i,"early_integration"]) & results_ei$score_aggreg == pull(results_ei_top_by_EI[i,"maxScore"]))[1])
+}
+
+xtable::xtable(results_ei[idx_ei_top_by_EI,1:12])
+```
+
+
+## Late_integration
+
+```{r top_modules_by_LI}
+results_li_top_by_LI = results_li %>%
+  group_by(late_integration, .groups = "keep") %>% 
+  summarise(maxScore = max(score_aggreg)) 
+
+idx_li_top_by_LI = c()
+for (i in 1:5) {
+  idx_li_top_by_LI = c(idx_li_top_by_LI, which(results_li$late_integration == pull(results_li_top_by_LI[i,"late_integration"]) & results_li$score_aggreg == pull(results_li_top_by_LI[i,"maxScore"]))[1])
+}
+
+xtable::xtable(results_li[idx_li_top_by_LI,1:13])
+```
+
+
+
+# Radar plot: supp figure 13
+
+## Early_integration
+
+```{r spider_plot}
+colors_dataset = RColorBrewer::brewer.pal(name="Dark2", n=8)
+
+# Choices from the top method table 
+score_data = rbind(
+  results_ei_all_dataset[
+    results_ei_all_dataset$preprocessing_RNA == "ppID" & 
+    results_ei_all_dataset$feature_selection_RNA == "scpseudobulk" & 
+    results_ei_all_dataset$preprocessing_scRNA == "sccluster" & 
+    results_ei_all_dataset$feature_selection_scRNA == "SCcluster" & 
+    results_ei_all_dataset$preprocessing_MET == "ppID" & 
+    results_ei_all_dataset$feature_selection_MET == "mostmethylated" & 
+    results_ei_all_dataset$early_integration == "concatnoscale" & 
+    results_ei_all_dataset$deconvolution == "RLRpoisson", ],
+  results_ei_all_dataset[
+    results_ei_all_dataset$preprocessing_RNA == "LogNorm" & 
+    results_ei_all_dataset$feature_selection_RNA == "scpseudobulk" & 
+    results_ei_all_dataset$preprocessing_scRNA == "scConcat" & 
+    results_ei_all_dataset$feature_selection_scRNA == "scpseudobulk" & 
+    results_ei_all_dataset$preprocessing_MET == "ppID" & 
+    results_ei_all_dataset$feature_selection_MET == "Toastpercent" & 
+    results_ei_all_dataset$early_integration == "concatscale" & 
+    results_ei_all_dataset$deconvolution == "RLR", ],
+  results_ei_all_dataset[
+    results_ei_all_dataset$preprocessing_RNA == "ppID" & 
+    results_ei_all_dataset$feature_selection_RNA == "Toastbulknbfs" & 
+    results_ei_all_dataset$preprocessing_scRNA == "LogNorm" & 
+    results_ei_all_dataset$feature_selection_scRNA == "fsID" & 
+    results_ei_all_dataset$preprocessing_MET == "Scale" & 
+    results_ei_all_dataset$feature_selection_MET == "SPLSDA" & 
+    results_ei_all_dataset$early_integration == "Kernel" & 
+    results_ei_all_dataset$deconvolution == "epic", ],
+  results_ei_all_dataset[
+    results_ei_all_dataset$preprocessing_RNA == "Scale" & 
+    results_ei_all_dataset$feature_selection_RNA == "Toastvst" & 
+    results_ei_all_dataset$preprocessing_scRNA == "LogNorm" & 
+    results_ei_all_dataset$feature_selection_scRNA == "fsID" & 
+    results_ei_all_dataset$preprocessing_MET == "Scale" & 
+    results_ei_all_dataset$feature_selection_MET == "SPLSDA" & 
+    results_ei_all_dataset$early_integration == "omicade4bulk" & 
+    results_ei_all_dataset$deconvolution == "lm", ],
+  results_ei_all_dataset[
+    results_ei_all_dataset$preprocessing_RNA == "LogNorm" & 
+    results_ei_all_dataset$feature_selection_RNA == "Toastbulknbfs" & 
+    results_ei_all_dataset$preprocessing_scRNA == "LogNorm" & 
+    results_ei_all_dataset$feature_selection_scRNA == "fsID" & 
+    results_ei_all_dataset$preprocessing_MET == "LogNorm" & 
+    results_ei_all_dataset$feature_selection_MET == "fsID" & 
+    results_ei_all_dataset$early_integration == "OT" & 
+    results_ei_all_dataset$deconvolution == "RLR", ]
+) %>% 
+  mutate(
+    dataset = factor(dataset, 
+                     levels = c("invitro1", "invivo1", "insilicopseudobulk1",
+                                "insilicodirichletNoDep1", "insilicodirichletNoDep4CTsource1", "insilicodirichletNoDep6CTsource1",
+                                "insilicodirichletEMFA1", "insilicodirichletEMFAImmuneLowProp1", "insilicodirichletCopule1"))
+  ) %>% 
+  select(c(dataset, early_integration) | ends_with("norm")) %>% 
+  filter(dataset != "invivo1") #%>% 
+  # tidyr::pivot_longer(
+  #   cols = aid_norm:spearman_tot_norm,
+  #   names_to = "metric_norm",
+  #   values_to = "score"
+  # ) %>% 
+  # group_by(dataset, early_integration, metric_norm) %>%
+  # summarise(max_score = max(score, na.rm = TRUE)) %>% 
+  # tidyr::pivot_wider(
+  #   names_from = metric_norm,
+  #   values_from = max_score
+  # )
+
+
+levels(score_data$early_integration)
+early_inte_method = "concatnoscale" ### change the method here
+
+
+df_radarplot = as.data.frame(base::rbind(
+  # rmse,       mae,       aitchison,        pearson_tot, pearson_col, pearson_row, spearman_tot, spearman_col, spearman_row
+  rep(1, ncol(score_data)-2), # the max/best value for each var
+  rep(0, ncol(score_data)-2), # the min/worst value for each var
+  score_data[score_data$early_integration == early_inte_method,-c(1,2)]
+))
+# -Inf appear by max when only NA (for JSD) 
+df_radarplot[df_radarplot < -10] = NA
+
+# remove "_norm" to gain space
+colnames(df_radarplot) <- substr(colnames(df_radarplot), 1, nchar(colnames(df_radarplot)) - 5)
+
+fmsb::radarchart(
+  df_radarplot, 
+  axistype = 0, seg = 5,
+  
+  title = paste(early_inte_method),
+  #custom polygon
+  pcol=colors_dataset, plwd=2, plty = 1,
+ 
+  #custom the grid
+  cglcol="grey", cglty=1, axislabcol="grey50", cglwd=0.8,
+ 
+  #custom labels
+  vlcex=1, vlabels = rep("", ncol(df_radarplot))
+)
+
+# by claude to change justification of labels
+n <- ncol(df_radarplot)
+angles <- (pi/2) + 2 * pi * (seq_len(n) - 1) / n  # angle de chaque axe
+
+r_label <- 1.15  # rayon pour positionner les labels (>1 = hors du graphe)
+x_pos <- (r_label+0.3) * cos(angles)
+y_pos <- r_label * sin(angles)
+
+text(
+  x = x_pos,
+  y = y_pos,
+  labels = colnames(df_radarplot),
+  cex = 0.9,
+  adj = c(0.5, 0.5),   # centrage horizontal / vertical
+  srt = 0,             # rotation en degrés (ex: 45 pour incliné)
+  font = 2,             # gras
+  col = c("red", "blue", "blue", 
+          "blue", "violet", "tan2", 
+          "violet", "blue", "red", 
+          "violet", "tan2", "violet")
+)
+
+
+
+
+legend(x=1.4, y=1.25,
+       legend =c("VITR", "SBN5",
+                 "SDN5", "SDN4", "SDN6",
+                 "SDE5", "SDEL", "SDC5"),
+       bty = "n", pch=20 , col=colors_dataset, text.col = "black",
+       cex=1, pt.cex=1, x.intersp=.8, y.intersp=.8, bg = "white"
+)
+```
+
+
+## Late_integration
+
+```{r spider_plot}
+colors_dataset = RColorBrewer::brewer.pal(name="Dark2", n=8)
+
+# Choices from the top method table 
+score_data = rbind(
+  results_li_all_dataset[
+    results_li_all_dataset$preprocessing_RNA == "LogNorm" & 
+    results_li_all_dataset$feature_selection_RNA == "scpseudobulk" & 
+    results_li_all_dataset$preprocessing_scRNA == "scConcat" & 
+    results_li_all_dataset$feature_selection_scRNA == "scpseudobulk" & 
+    results_li_all_dataset$deconvolution_rna == "lm" & 
+    results_li_all_dataset$preprocessing_MET == "ppID" & 
+    results_li_all_dataset$feature_selection_MET == "maxdiscriminant" & 
+    results_li_all_dataset$deconvolution_met == "RLRpoisson" & 
+    results_li_all_dataset$late_integration == "limean", ],
+  results_li_all_dataset[
+    results_li_all_dataset$preprocessing_RNA == "Scale" & 
+    results_li_all_dataset$feature_selection_RNA == "fsID" & 
+    results_li_all_dataset$preprocessing_scRNA == "Scale" & 
+    results_li_all_dataset$feature_selection_scRNA == "fsID" & 
+    results_li_all_dataset$deconvolution_rna == "RLRpoisson" & 
+    results_li_all_dataset$preprocessing_MET == "ppID" & 
+    results_li_all_dataset$feature_selection_MET == "maxdiscriminant" & 
+    results_li_all_dataset$deconvolution_met == "RLRpoisson" & 
+    results_li_all_dataset$late_integration == "TunedJ", ],
+  results_li_all_dataset[
+    results_li_all_dataset$preprocessing_RNA == "LogNorm" & 
+    results_li_all_dataset$feature_selection_RNA == "Toastbulknbfs" & 
+    results_li_all_dataset$preprocessing_scRNA == "LogNorm" & 
+    results_li_all_dataset$feature_selection_scRNA == "fsID" & 
+    results_li_all_dataset$deconvolution_rna == "RLRpoisson" & 
+    results_li_all_dataset$preprocessing_MET == "ppID" & 
+    results_li_all_dataset$feature_selection_MET == "maxdiscriminant" & 
+    results_li_all_dataset$deconvolution_met == "RLRpoisson" & 
+    results_li_all_dataset$late_integration == "limeanRMSE", ],
+  results_li_all_dataset[
+    results_li_all_dataset$preprocessing_RNA == "nopp" & 
+    results_li_all_dataset$feature_selection_RNA == "nofs" & 
+    results_li_all_dataset$preprocessing_scRNA == "nopp" & 
+    results_li_all_dataset$feature_selection_scRNA == "nofs" & 
+    results_li_all_dataset$deconvolution_rna == "node" & 
+    results_li_all_dataset$preprocessing_MET == "ppID" & 
+    results_li_all_dataset$feature_selection_MET == "maxdiscriminant" & 
+    results_li_all_dataset$deconvolution_met == "RLRpoisson" & 
+    results_li_all_dataset$late_integration == "OnlyMet", ],
+  results_li_all_dataset[
+    results_li_all_dataset$preprocessing_RNA == "LogNorm" & 
+    results_li_all_dataset$feature_selection_RNA == "Toastbulknbfs" & 
+    results_li_all_dataset$preprocessing_scRNA == "LogNorm" & 
+    results_li_all_dataset$feature_selection_scRNA == "fsID" & 
+    results_li_all_dataset$deconvolution_rna == "RLRpoisson" & 
+    results_li_all_dataset$preprocessing_MET == "nopp" & 
+    results_li_all_dataset$feature_selection_MET == "nofs" & 
+    results_li_all_dataset$deconvolution_met == "node" & 
+    results_li_all_dataset$late_integration == "OnlyRna", ]
+) %>% 
+  mutate(
+    dataset = factor(dataset, 
+                     levels = c("invitro1", "invivo1", "insilicopseudobulk1",
+                                "insilicodirichletNoDep1", "insilicodirichletNoDep4CTsource1", "insilicodirichletNoDep6CTsource1",
+                                "insilicodirichletEMFA1", "insilicodirichletEMFAImmuneLowProp1", "insilicodirichletCopule1"))
+  ) %>% 
+  select(c(dataset, late_integration) | ends_with("norm")) %>% 
+  filter(dataset != "invivo1")# %>% 
+  # tidyr::pivot_longer(
+  #   cols = aid_norm:spearman_tot_norm,
+  #   names_to = "metric_norm",
+  #   values_to = "score"
+  # ) %>% 
+  # # group_by(dataset, late_integration, metric_norm) %>%
+  # # summarise(max_score = max(score, na.rm = TRUE)) %>% 
+  # tidyr::pivot_wider(
+  #   names_from = metric_norm,
+  #   values_from = max_score
+  # )
+
+
+levels(score_data$late_integration)
+late_inte_method = "TunedJ"        ### change the method here
+
+
+df_radarplot = as.data.frame(base::rbind(
+  # rmse,       mae,       aitchison,        pearson_tot, pearson_col, pearson_row, spearman_tot, spearman_col, spearman_row
+  rep(1, ncol(score_data)-2), # the max/best value for each var
+  rep(0, ncol(score_data)-2), # the min/worst value for each var
+  score_data[score_data$late_integration == late_inte_method,-c(1,2)]
+))
+# -Inf appear by max when only NA (for JSD) 
+df_radarplot[df_radarplot < -10] = NA
+
+# remove "_norm" to gain space
+colnames(df_radarplot) <- substr(colnames(df_radarplot), 1, nchar(colnames(df_radarplot)) - 5)
+
+fmsb::radarchart(
+  df_radarplot, 
+  axistype = 0, seg = 5,
+  
+  title = paste(late_inte_method),
+  #custom polygon
+  pcol=colors_dataset, plwd=2, plty = 1,
+ 
+  #custom the grid
+  cglcol="grey", cglty=1, axislabcol="grey50", cglwd=0.8,
+ 
+  #custom labels
+  vlcex=1, vlabels = rep("", ncol(df_radarplot))
+)
+
+# by claude to change justification of labels
+n <- ncol(df_radarplot)
+angles <- (pi/2) + 2 * pi * (seq_len(n) - 1) / n  # angle de chaque axe
+
+r_label <- 1.15  # rayon pour positionner les labels (>1 = hors du graphe)
+x_pos <- (r_label+0.3) * cos(angles)
+y_pos <- r_label * sin(angles)
+
+text(
+  x = x_pos,
+  y = y_pos,
+  labels = colnames(df_radarplot),
+  cex = 0.9,
+  adj = c(0.5, 0.5),   # centrage horizontal / vertical
+  srt = 0,             # rotation en degrés (ex: 45 pour incliné)
+  font = 2,             # gras
+  col = c("red", "blue", "blue", 
+          "blue", "violet", "tan2", 
+          "violet", "blue", "red", 
+          "violet", "tan2", "violet")
+)
+
+
+legend(x=0.1, y=1.1,
+       legend = unique(score_data$dataset),
+       bty = "n", pch=20 , col=colors_dataset, text.col = "black",
+       cex=1, pt.cex=1, x.intersp=.8, y.intersp=.8
+)
+```
