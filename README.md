@@ -1,355 +1,276 @@
-# Hadaca3 Framework 
+# HADACA3 Framework
 
-A framework to collectively develop multi-omic deconvolution methods.
+> **Modular Nextflow pipeline for multi-omic deconvolution benchmarking**
 
-The core idea is of this framework is to combine function blocks together to help compare the use of any combination of pre-processing, features selection, deconvolution algorithms and integration of each individual omic type : RNA, Methylation and Single cells. 
+![HADACA3 Benchmark](img/figure_benchmark.png)
+
+This repository contains the benchmarking framework used in the **HADACA3 benchmark** study:
+
+> *On the Promises and Limits of Multimodal Integration for Deconvolution: The HADACA3 Benchmark* 
+
+> ⚠️ **This paper is currently under anonymous review. The preprint and full citation will be made available upon completion of the review process.**
+
+---
+
+## Overview
+
+HADACA3 is a community-driven benchmark evaluating **multi-omic integration strategies for bulk tissue deconvolution**. Given bulk RNA-seq and DNA methylation (DNAm) profiles of tumor samples, the task is to estimate the relative proportions of cell types present in the mixture.
+
+This framework provides a **modular Nextflow pipeline** that systematically evaluates all compatible combinations of:
+
+- **Preprocessing** methods 
+- **Feature selection** methods 
+- **Deconvolution** algorithms 
+- **Multi-omics integration** strategies 
+
+Over **270,000 pipeline combinations** were evaluated across **9 benchmark datasets** spanning *in silico*, *in vitro*, and *in vivo* settings.
 
 ---
 
-## Folder Structure
+## Repository Structure
 
 ```
-00_paper_reproducibility/    			# Scripts to reproduce the paper datasets and figure
-function_blocks_/            			# Scripts of each method in each module of the modular benchmark
-function_metada_and_selection_/         # Scripts to reproduce the benchmark
-          # Code to reproduce all figures in the paper
+hadaca3_framework/
+├── .github/workflows/              # CI/CD configuration (GitHub Actions)
+├── 00_paper_reproducibility/       # Code to reproduce all paper results and figures
+├── function_blocks/                # Implementation of all pipeline module functions (R/Python)
+├── function_metadata_and_selection/# YAML declarations and method selection logic
+├── scripts_bash/                   # Bash scripts for job submission and pipeline execution
+├── utils/                          # Shared utilities (HDF5 I/O, scoring, data processing)
+├── wrapper/                        # Nextflow process wrappers
+├── 00_run_pipeline.nf              # Main Nextflow pipeline entry point
+├── nextflow.config                 # Nextflow configuration (CPU limits, parallelism)
+├── index.html                      # Pipeline results viewer
+├── .gitignore
+└── LICENSE                         # GPL-3.0
 ```
-
 
 ---
-## How to run the benchmark?
 
+## Quick Start
 
-```
-cd ~/projects
-git clone git@github.com:bcm-uga/hadaca3_framework.git
+### 1. Clone the repository
+
+```bash
+# Repository URL will be provided upon completion of the review process.
+git clone <repository_url>
 cd hadaca3_framework
 ```
 
-## Conda environement
+### 2. Set up the environment
 
-Set up your conda environement as follow:
-
-```{Automatic CI-conda}
+```bash
 conda create -y -n hadaca3framework_env
-conda activate hadaca3framework_env     
+conda activate hadaca3framework_env
 
-
-mamba install -y  -c bioconda -c conda-forge -c r snakemake python r-base r-rmarkdown r-nnls r-seurat bioconductor-rhdf5 bioconductor-mixOmics bioconductor-edgeR r-quadprog r-coda.base r-dt bioconductor-toast  psutil nextflow=24.10.5 r-lubridate r-remotes r-markdown bioconductor-OmnipathR r-EPIC r-furrr bioconda::r-mixkernel bioconda::bioconductor-mofa2 bioconductor-omicade4 bioconda::mofapy2 r-caret r-factominer scanpy=1.11 numpy=1.26.4 r-pbapply r-dplyr r-e1071 bioconductor-preprocessCore r-wesanderson bioconda::bioconductor-singlecellexperiment r-rlang r-mcmcpack bioconductor-mast quadprog r-reshape r-e1071 r-rocr r-varhandle
-
+mamba install -y -c bioconda -c conda-forge -c r \
+    snakemake python r-base r-rmarkdown r-nnls r-seurat \
+    bioconductor-rhdf5 bioconductor-mixOmics bioconductor-edgeR \
+    r-quadprog r-coda.base r-dt bioconductor-toast \
+    psutil nextflow=24.10.5 r-lubridate r-remotes r-markdown \
+    bioconductor-OmnipathR r-EPIC r-furrr \
+    bioconda::r-mixkernel bioconda::bioconductor-mofa2 \
+    bioconductor-omicade4 bioconda::mofapy2 \
+    r-caret r-factominer scanpy=1.11 numpy=1.26.4
 
 pip install uniport
-
-
 Rscript -e 'install.packages("FARDEEP", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")'
 Rscript -e 'remotes::install_github("immunogenomics/presto")'
 Rscript -e 'remotes::install_github("Danko-Lab/BayesPrism/BayesPrism")'
 Rscript -e 'remotes::install_github("humengying0907/InstaPrism")'
 Rscript -e 'remotes::install_github("xuranw/MuSiC", dependencies = TRUE,INSTALL_opts = "--no-lock")'
+
 ```
 
+### 3. Download the data
 
-## Getting original data
+> ⚠️ **The datasets are archived on Zenodo. The DOI and download URL will be provided upon completion of the review process.**
 
-The section describes which data are needed to execute the entire pipeline and provide the code to download it.
+Once available, download and place the `.h5` files in the `data/` folder:
 
-```{Automatic CI-data}
+```bash
 mkdir -p ~/projects/hadaca3_framework/data
 cd ~/projects/hadaca3_framework/data
 
-# from CIMENT/GRICAD cluster using rsync and dahu node
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicodirichletCopule_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicodirichletEMFA_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicopseudobulk_pdac.h5 . 
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_invitro_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_invivo_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep4CTsource_pdac.h5 . 
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep6CTsource_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth1_insilicodirichletEMFAImmuneLowProp_pdac.h5 .
+# Download from Zenodo (URL available after review)
 
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicodirichletCopule_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicodirichletEMFA_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicopseudobulk_pdac.h5 . 
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_invitro_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_invivo_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep4CTsource_pdac.h5 . 
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep6CTsource_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/groundtruth2_insilicodirichletEMFAImmuneLowProp_pdac.h5 .
-
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicodirichletCopule_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicodirichletEMFA_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicopseudobulk_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_invitro_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_invivo_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicodirichletNoDep_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicodirichletNoDep4CTsource_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicodirichletNoDep6CTsource_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes1_insilicodirichletEMFAImmuneLowProp_pdac.h5 .
-
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicodirichletCopule_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicodirichletEMFA_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicopseudobulk_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_invitro_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_invivo_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicodirichletNoDep_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicodirichletNoDep4CTsource_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicodirichletNoDep6CTsource_pdac.h5 .
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/mixes2_insilicodirichletEMFAImmuneLowProp_pdac.h5 .
-
-rsync -auvP dahu.ciment:/bettik/hombergn/projects/hadaca3_framework/data/ref.h5 .
-
-# from internet using wget
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletCopule_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletEMFA_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicopseudobulk_pdac.h5 
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_invitro_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_invivo_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep4CTsource_pdac.h5 
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletNoDep6CTsource_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth1_insilicodirichletEMFAImmuneLowProp_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletCopule_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletEMFA_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicopseudobulk_pdac.h5 
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_invitro_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_invivo_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep4CTsource_pdac.h5 
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletNoDep6CTsource_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/groundtruth2_insilicodirichletEMFAImmuneLowProp_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletCopule_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletEMFA_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicopseudobulk_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_invitro_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_invivo_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletNoDep_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletNoDep4CTsource_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletNoDep6CTsource_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes1_insilicodirichletEMFAImmuneLowProp_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletCopule_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletEMFA_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicopseudobulk_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_invitro_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_invivo_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep4CTsource_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletNoDep6CTsource_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/mixes2_insilicodirichletEMFAImmuneLowProp_pdac.h5
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/data/ref.h5
-
-
-
-# get all data from zenodo 
-curl -L -o files-archive.zip https://zenodo.org/api/records/19677979/files-archive
-unzip files-archive.zip
+# wget <zenodo_url>/ref.h5
+# wget <zenodo_url>/groundtruth1_<dataset>_pdac.h5
+# wget <zenodo_url>/mixes1_<dataset>_pdac.h5
+# ...
 ```
 
+The following files are expected:
 
-## Working on meta-analysis results 
+| File pattern | Description |
+|---|---|
+| `ref.h5` | Reference profiles (RNA, DNAm, scRNA) |
+| `groundtruth{1,2}_insilico*_pdac.h5` | Ground truth for in silico datasets |
+| `groundtruth{1,2}_invitro_pdac.h5` | Ground truth for in vitro dataset |
+| `groundtruth{1,2}_invivo_pdac.h5` | Ground truth for in vivo dataset |
+| `mixes{1,2}_insilico*_pdac.h5` | Mixture data for in silico datasets |
+| `mixes{1,2}_invitro_pdac.h5` | Mixture data for in vitro dataset |
+| `mixes{1,2}_invivo_pdac.h5` | Mixture data for in vivo dataset |
 
+### 4. Run the pipeline
 
-```
-cd ~/projects/hadaca3_framework/
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/results_ei.csv.gz
-wget http://epimed.univ-grenoble-alpes.fr/downloads/dmzfch/hadaca3_framework/results_li.csv.gz
-# under R :
-Rscript -e 'rmarkdown::render("08_metaanalysis.Rmd")'
-```
-
-## Execute the pipeline: 
-
-
-### N E X T F L O W  
-
-```
+```bash
+# Basic run
 nextflow run 00_run_pipeline.nf
-nextflow run 00_run_pipeline.nf -stub -resume  #continue and dry run
+
+# Resume interrupted run (dry-run)
+nextflow run 00_run_pipeline.nf -stub -resume
+
+# Full run with reports
+nextflow run 00_run_pipeline.nf -with-dag -with-report -with-trace -with-timeline
+
+# Run with a specific benchmark setup
+nextflow run 00_run_pipeline.nf -resume --setup_folder benchmark/setup/1/
 ```
 
-To create a a full report of the pipeline these options could be passed: 
-```
-nextflow run 00_run_pipeline.nf -with-dag -with-report -with-trace -with-timeline 
-```
+### 5. Run the meta-analysis
 
-Run with minimal setup to debug fonction. 
+```bash
+# Download precomputed results (optional, to skip the full pipeline)
+# URLs will be provided upon completion of the review process.
+# wget <zenodo_url>/results_ei.csv.gz
+# wget <zenodo_url>/results_li.csv.gz
+
 ```
-nextflow run 00_run_pipeline.nf  -with-report -resume --setup_folder function_metada_and_selection/Local_test_setup/
-```
-
-
-
 
 ---
 
-## How to Add Your Function to the Pipeline
+## Pipeline Architecture
 
-This project is designed to be **extensible**—you can easily add new functions for the following [block types](#blocks-description):
-- Pre-processing
-- Feature selection
-- Deconvolution
-- Late integration
-- Early integration
+The pipeline is decomposed into **four sequential modules**. Each module is independently configurable via its corresponding `.yml` file.
 
-**Supported languages:** R and Python.
-*Note:* For now, only **early integration functions** are fully compatible with Python. Python support for other block types can be added—contributions are welcome!
----
+```
+Bulk RNA + DNAm data
+        │
+        ▼
+┌─────────────────┐
+│  Preprocessing  │  ← function_metadata_and_selection/template_complete_run/preprocessing.yml
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│Feature Selection│  ← function_metadata_and_selection/template_complete_run/feature_selection.yml
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+[Pipeline A]  [Pipeline B]
+Late integr.  Early integr. function_metadata_and_selection/template_complete_run/early_integration.yml
+    │         │
+    ▼         ▼
+Deconvolution (per modality or joint) function_metadata_and_selection/template_complete_run/ceconvolution.yml
+    │
+    ▼
+Integration  ← function_metadata_and_selection/template_complete_run/late_integration.yml 
+    │
+    ▼
+Cell-type proportion estimates
+```
 
-### Steps to Add Your Function
+**Pipeline A (late integration):** deconvolve each modality independently, then combine predictions.
 
-#### 1. **Add Function Metadata**
-Edit the **YAML metadata file** corresponding to your function’s block type. The YAML files are named as follows:
-- `datasets.yml`
-- `preprocessing.yml` (pp)
-- `feature_selection.yml` (fs)
-- `deconvolution.yml` (de)
-- `early_integration.yml` (ei)
-- `late_integration.yml` (li)
-
-By default functions are selected from the folder "function_metada_and_selection/CI_functions_selection/*.yml". 
-A minimal test setup is available under "function_metada_and_selection/local_test_setup"
-
-For a detailed description of the metadata structure, see the [YML Metadata Section](#yml-metadata).
-
-#### 2. **Add Your Function Code**
-- Place your function code in the **appropriate folder** for its block type.
-- **Update the YAML metadata** to include the correct path to your function.
-
-
-
-### Best Practices
-- **Use the identity function as a template**:
-  Mimic the behavior of the identity function (e.g., `ppID` for pre-processing). These functions act as a baseline and **do not modify the input data**, making them ideal references for consistency.
-
-- **Test locally before submitting**:
-  - Download the datasets and **test your function locally** using a reduced subset of the data.
-  - Run the pipeline with your function by following the instructions in the **[Nextflow section](#nextflow)**.
-  - Refer to the `function_metada_and_selection/setups/` folder for subset configuration examples.
-
-- **Automated CI evaluation**:
-  Once pushed, your code will **automatically run on the CI**, and the results will be available on the GitHub page.
+**Pipeline B (early integration):** combine modalities at the feature level, then deconvolve the joint representation.
 
 ---
 
-## More informations
+## Adding a New Method
 
-### Continuous Integration description 
-There are two types of contiuous integration (CI). 
-- One partial which is executed every comit and that will continue tasks not completed yet (it run the pipeline with the command `-resume`).
-- One full CI which will be executed in a temporary folder and re run all tasks from scratch to ensure reproductibility. 
+The framework is designed to be **extensible**. To add a new method:
 
-The partial CI is trigger every comit, whereas the full CI is scheduled to run at 3 am every day if there was a modification during that day. 
+### 1. Declare it in the appropriate `.yml` file
 
-In some case, the full CI can be deactivated with the argument `if : fasle`.
-
-Also it is possible to skip the execution of the partial CI by adding one of these key word in bracket in the commit message.
-- [skip ci]
-- [ci skip]
-- [no ci]
-- [skip actions]
-- [actions skip]
-
-
-
-## Yml metadata
-
-The pipeline will create combinaisons between compatible functions from each block. 
-
-A normal user, should not edit the pipeline file directly. To add and remove functions, edit the corresponding .yml files and populate the folders accordingly. 
-
-The yml should contains these fields:
-```{yml}
-normalize : 
-  path: function_blocks/preprocessing/normalize.R
-  short_name: norm
-  omic: [mixMET,MET]
+```yaml
+my_method:
+  path: preprocessing/my_method.R
+  short_name: mymth
+  omic: [mixRNA, RNA]
 ```
 
-- *normalize* is a unique function name, 
-- *path* is the relative path from the hadaca3_framework/ folder
-- *short_name* is a 4- or 5-letters short name of the function, it is used to display graphs to make it more readable
-- *omic*: contains a list of the omic types that this function accepts and will modify. It can take only one omic such as [scRNA] or several [mixRNA,RNA,scRNA] or all omics with the keyword [ANY]. 
+Fields:
+- `path`: relative path from the repo root
+- `short_name`: 4–5 character label used in plots
+- `omic`: list of omic types this function handles (`mixRNA`, `mixMET`, `RNA`, `MET`, `scRNA`, or `ANY`)
 
-Beware, functions that handle several omics such as [ANY] or [mixRNA,RNA,scRNA] have to handle each of the omic individually. 
+Optional fields:
+- `dependency`: list of external files needed at runtime
+- `create`: declares that this function creates a new omic type
+- `need` / `omic_need`: declares a dependency on a previously created omic type
 
-Additionnaly, be warn that decovolution function default omic is ANY. However decovolution can accept RNA or MET omic. If anything a decovolution function has omic defined as RNA or MET, this function will **NOT** be included in the early integreation pipeline, leave omic empty or with the ANY omic to be included in the early_integration.  
+### 2. Implement the function
 
-Indeed, each fonction of each block have the same function header that looks like:
-```
-program_block_PP <- function(data,path_og_dataset='',omic='') {
+Functions are declared in the `function_blocks`.
+
+All functions share the same signature:
+
+```r
+program_block_PP <- function(data, path_og_dataset='', omic='') { #PP stands for preprocessing
+    # data: single omic matrix (features × samples)
+    # path_og_dataset: list with paths to mix and reference data
+    # omic: string identifying the current omic type
     ...
-  return(data) 
+    return(data)
 }
 ```
-with
-- *data* being a single omic type also specified within the variable called *omic*. The function should return the same omic type!
-- *path_og_dataset* being a list with the path of mixes and references (ref_bulk, ref_met, ref_scRNA) with the original mix datasets and reference data. In the case of a reference omic being computed (one of [RNA,scRNA,MET]), the original mix dataset is set to **none**.
 
-To use these paths, use the provided function **read_all_ref_hdf5(path)** or **read_hdf5(path)** from *utils/data_processing.R*. The file *utils/data_processing.R* is already loaded, so there is no need to source it.   
+Use `read_all_ref_hdf5()` or `read_hdf5()` from `utils/data_processing.R` to load reference data (already sourced — no need to re-source).
 
-For example we can load the reference bulkRNA like this:
-```
-og_ref_bulkRNA  =  read_all_ref_hdf5(path_og_dataset$ref,to_read = 'ref_bulkRNA')$ref_bulkRNA
-or 
-og_ref_bulkRNA  =  read_hdf5(path_og_dataset$ref)$ref_bulkRNA 
-```
+> **Tip:** Use the identity function (e.g., `ppID`) as a template. It returns data unchanged and serves as the no-op baseline.
 
-There are other optional fields that can be specified in the yml: 
-```
-function1 : 
-    create : [ref_concat]
-    dependency : [file1,file2]
-    omic  : [scRNA]
+**Python** is supported for early integration functions. Contributions to extend Python support to other modules are welcome.
 
-function2 :
-    need: [ref_cluster]
-    omic_need : [scRNA]
-    omic : [mixRNA,RNA,scRNA]
-```
+---
 
-The field  *dependency* contains a list of files that can be read during the execution of the function. The path in the field dependency is a relative path, whereas the path in the function code will only be the file name. 
-For instance dependency : [preprocessing/attachement/teamHtfrna_network_modules.rds,preprocessing/attachement/teamHtfrna_ref_modules.rds] in the yml means that the file "teamHtfrna_network_modules.rds" and "teamHtfrna_ref_modules.rds" are readable in the function with a code like: `readRDS("teamHtfrna_ref_modules.rds")`.
+## Data Format
 
-The field *create* means that it will create a new kind of omic. 
-*need* and *omic_need* specify that this fonction needs an omic of the kind (omic_need). 
-Functions with the field *need* will be linked with the previous function that created this kind of omic, or, if the function is handling a different omic than the one created in the previous function, the omic created will be passed in the *og_dataset_path*. If the needed omic is a mix, its path will be under *og_dataset_path$mix* and under *og_dataset_path$ref*.
+All datasets are stored in **HDF5 format** (`.h5`). The framework provides read/write utilities in `utils/data_processing.R` and `utils/data_processing.py`.
 
+Key functions:
 
-For example: 
-The function1 creates the omic ref_concat of the type scRNA. Function2 needs this omic to run. Nonetheless, function2 handles three different types of omic [mixRNA,RNA,scRNA].
-- When function2 is handling **"scRNA"** omic, and since function2 needs that omic, function2 will only be linked with the output of function1 or any other function that created the omic *ref_cluster* . 
-- When function2 is handling **mixRNA**, function2 will be linked with any previous block that outputs the omic **mixRNA**! However the omic *ref_cluster* of the type *scRNA* is passed as path in *og_dataset_path$ref*.
-- When function2 is handling **RNA**, function2 will be linked with any previous block that outputs the omic **RNA**! However the omic *ref_cluster* of the type *scRNA* is passed as path in *og_dataset_path$ref*. 
+| Function | Description |
+|----------|-------------|
+| `read_all_hdf5(path, to_read=c('mix','ref'))` | Read full multi-data object |
+| `write_all_hdf5(path, multi_data)` | Write full multi-data object |
+| `read_hdf5(path)` | Read all sub-datasets from a path |
+| `write_global_hdf5(path, data_list)` | Write all sub-datasets |
+
+All HDF5 files use gzip compression (level 6) with shuffling for reduced storage footprint. Files can be explored interactively at [h5web.panosc.eu](https://h5web.panosc.eu/) or with the VS Code extension *H5Web*.
+
+---
+
+## Continuous Integration
+
+Two CI pipelines are configured:
+
+| CI type | Trigger | Description |
+|---------|---------|-------------|
+| **Partial** | Every commit | Resumes incomplete tasks (`-resume`) |
+| **Full** | Daily at 3am (if modified) | Re-runs all tasks from scratch to verify reproducibility |
+
+To skip CI on a commit, include one of the following keywords in the commit message: `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`.
 
 
+---
 
+## License
 
-## HDF5 format.
+This project is licensed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE) for details.
 
-Hierarchical Data Format (HDF) is a set of file formats (HDF4, HDF5) designed to store and organise large amounts of data. 
+---
 
-It behaves like the OS file system with groups as folders and can handle symlink internally. 
-There are tools such as https://h5web.panosc.eu/ to visualise data. This tool also exists as a VS code extension by the name *H5Web*. 
+## Citation
 
-There is a Linux program that reads HDF5 data in a terminal: 
-https://support.hdfgroup.org/documentation/hdf5/latest/_view_tools_view.html
-You can install it with : 
-`sudo apt-get install hdf5-tools`
+> ⚠️ Citation information will be provided upon completion of the review process.
 
-### How to read and write H5 files?  
+---
 
-In the hadaca3_framework project, Python and R libraries are provided to read and write data. 
-They are named *data_processing* and are located in the *utils* folder.  
+## Contributing
 
-Useful functions: 
-- *read_hdf5(path)* returns a data_list. This function browses the file from the path and reads all subfolders inside this path. For instance, if the file "exemple.h5" contains /prop1 and /prop2, *read_hdf5(path)* returns a list(prop1, prop2).
+Contributions are welcome! To add a new deconvolution method, integration strategy, or feature selection approach, please follow the instructions in the [Adding a New Method](#adding-a-new-method) section and open a pull request.
 
-- *write_global_hdf5(path,data_list)* writes all sub-data inside the data_list. 
-For instance, data_list contains prop1 and prop2, *write_global_hdf5(file,data_list)* will write both prop in the file. 
-
-
-All data should have HDF5 format with a compression level set to 6 and 'gzip' as the compression algorithm. Furthermore, to reduce storage footprints, the data are shuffled and written in one single chunk (chunk size = length(data)). *HDF5 shuffling does not impact order of the uncompressed file*.
-
-
-
+For bug reports or feature requests, please open an issue on the repository (link available after review).

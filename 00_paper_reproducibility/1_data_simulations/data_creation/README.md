@@ -1,97 +1,63 @@
-# hadaca3 data creation 
+# data_creation
+
+This folder contains all R scripts used to generate the **reference profiles** and **benchmark datasets** described in the HADACA3 study. It is part of the `00_paper_reproducibility` directory.
+
+> ⚠️ **This paper is currently under anonymous review. Citation and repository links will be made available upon completion of the review process.**
 
 
-## Conda environement
+---
 
-Set up your conda environement as follow:
+## 01.1 — Reference Profiles
 
-```
-conda create -n hadaca3data_env
-conda activate hadaca3data_env
+Scripts in this folder generate the **cell-type reference profiles** provided to participants for supervised deconvolution. Three types of reference profiles are produced:
 
-mamba install -y  -c bioconda -c conda-forge -c r r-base snakemake=7.32.4 python=3.9 r-rmarkdown r-seurat r-clue r-ggpubr  r-viridis   
+| Reference type | Modality | Cell types |
+|----------------|----------|------------|
+| Pure-bulk RNA | RNA-seq | Classical, Basal-like, Immune, Fibroblasts, Endothelial |
+| Pure-bulk DNAm | DNA methylation | Classical, Basal-like, Immune, Fibroblasts, Endothelial |
+| scRNA-seq | Single-cell RNA | Classical, Basal-like, Immune, Fibroblasts, Endothelial |
 
-```
+For bulk references, replicates from each cell type are aggregated into a single meta-reference profile by averaging all available cell-type-specific profiles.
 
-graphviz python-kaleido tenacity plotly r-bisquerna r-extraDistr r-MASS r-EPIC r-fmsb bioconductor-toast bioconductor-omicade4 r-mixomics r-mixkernel rpy2 scikit-learn keras tensorflow bioconductor-viper bioconductor-ADImpute r-WGCNA r-see r-ggfortify scanpy bioconda::bioconductor-graph  bioconda::r-wgcna  bioconda::bioconductor-edger bioconda::bioconductor-rgraphviz
+> **All source data files are publicly available.** They can be downloaded from the repositories referenced in Tables 5 and 6 of the paper's Supplementary Material (Section B.1.1). Each source dataset is identified by its GEO accession number or public repository URL as cited in the paper.
 
+---
 
+## 01.2 — Pure Profiles for Simulation
 
-## How to start?
+Scripts in this folder generate the **pure cell-type profiles** used as input to the simulation models. These profiles are distinct from the reference profiles provided to participants, ensuring that the benchmark datasets do not overlap with the deconvolution references (no circularity).
 
-To execute the entire pipeline (generate sources, references, datsets and run baselines, scoring and visualisation) execute the following lines. You will probably need to get original data, so refer to the next section if needed.
+> **All source data files are publicly available** and can be downloaded from the repositories referenced in Tables 5 and 6 of the paper's Supplementary Material (Section B.1.1).
 
-```
-snakemake --cores 1 -s 00_run_pipeline.py -p clean  # remove .rds files
-snakemake --cores 4 -s 00_run_pipeline.py -pn       # dry-run
-```
+---
 
-This pipeline can be visualised by generating its DAG:
+## 01.2 — Simulation Scripts
 
-```
-snakemake --forceall --dag -s 00_run_pipeline.py | dot -Tpdf > dag.pdf
-```
+The following datasets are generated:
 
+| Dataset | Script | Noise RNA | Noise DNAm | Cell types | Notes |
+|---------|--------|-----------|------------|------------|-------|
+| `SBN5` | `sim_pseudobulk.R` | Pseudo-bulk | Pseudo-bulk | 5 | Aggregated single-cell profiles |
+| `SDN5` | `sim_noDep_5CT.R` | χ² (heteroscedastic) | Gaussian | 5 | Matching reference |
+| `SDN4` | `sim_noDep_4CT.R` | χ² (heteroscedastic) | Gaussian | 4 | Basal-like type removed |
+| `SDN6` | `sim_noDep_6CT.R` | χ² (heteroscedastic) | Gaussian | 6 | Extra synthetic cell type |
+| `SDE5` | `sim_EMFA.R` | EM (low-rank factor) | EM (low-rank factor) | 5 | Structured gene co-expression |
+| `SDEL` | `sim_EMFA_rare.R` | EM (low-rank factor) | EM (low-rank factor) | 5 | Rare cell type scenario (`α_rare`) |
+| `SDC5` | `sim_copula.R` | Copula + Negative Binomial | Copula + Beta | 5 | Structured cross-feature dependencies |
 
-## Configure your work. env. by getting original data
+Each script produces two splits of 30 samples each (train and test), stored in HDF5 format.
 
-The section describes which data are needed to execute the entire pipeline and provide the code to download it.
+---
 
+## Requirements
 
-List of files needed for the correct execution : 
-* ~/projects/pancreas_deconv_data/results/20210624/02.1_output/peng_pool_labelled.rds
-* ~/projects/datashare/cometh_lot1/*  (mag)
-* ~/projects/datashare/data_cometh_lot2/*  (mag)
-* ~/projects/datashare/input_ref_hadaca3/* (lucie)
-* ~/projects/datashare/genref_hadaca3/genref_hadaca2_rna.rds
-* ~/projects/datashare/genref_hadaca3/genref_hadaca2_meth.rds
-* ~/projects/datashare/genref_hadaca3/00_peng_k_2019.rds
-* ~/projects/datashare/genref_hadaca3/00_raghavan_s_2021.rds
-* ~/projects/datashare/genref_hadaca3/00_baron_m_2016.rds
-* ~/projects/datashare/genref_hadaca3/cpg_probes_400k
-```
-scp -r dahu.ciment:/bettik/lamothlu/projects/datashare/input_ref_hadaca3 ~/projects/datasahre/
-mkdir -p ~/projects/datashare/cometh_lot1/transcriptome
-rsync -auvP dahu.ciment:/home/richamag/projects/datashare/cometh_lot1/transcriptome/gene_counts_normalised.txt ~/projects/datashare/cometh_lot1/transcriptome/gene_counts_normalised.txt
-
-mkdir -p ~/projects/datashare/cometh_lot1/methylation
-rsync -auvP dahu.ciment:/home/richamag/projects/datashare/cometh_lot1/methylation/test_data_met_new.rds ~/projects/datashare/cometh_lot1/methylation/test_data_met_new.rds
-
-rsync -auvP dahu.ciment:/home/richamag/projects/datashare/cometh_lot1/test_solution.rds ~/projects/datashare/cometh_lot1/test_solution.rds
-
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/input_ref_hadaca3/ ~/projects/datashare/input_ref_hadaca3
+- R ≥ 4.0
+- R packages: `rhdf5`, `MASS`, `copula`, `Matrix`
 
 
-mkdir -p ~/projects/datashare/cometh_lot2/methylation/
-mkdir -p ~/projects/datashare/cometh_lot2/transcriptome/
-mkdir -p ~/projects/datashare/cometh_lot2/prediction_owkin/
-rsync -auvP dahu.ciment:/bettik/amblaeli/projects/datashare/cometh_lot2/methylation/test_data_met_new.rds          ~/projects/datashare/cometh_lot2/methylation/     
-rsync -auvP dahu.ciment:/bettik/amblaeli/projects/datashare/cometh_lot2/transcriptome/gene_counts_normalised.txt   ~/projects/datashare/cometh_lot2/transcriptome/   
-rsync -auvP dahu.ciment:/bettik/amblaeli/projects/datashare/cometh_lot2/prediction_owkin/preds_clean_50_add_mr.csv ~/projects/datashare/cometh_lot2/prediction_owkin/
+---
 
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/pseudobulk_mix_hadaca3/ ~/projects/datashare/pseudobulk_mix_hadaca3
+## Notes
 
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/00_peng_k_2019.rds        ~/projects/datashare/genref_hadaca3/
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/00_raghavan_s_2021.rds    ~/projects/datashare/genref_hadaca3/
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/00_baron_m_2016.rds       ~/projects/datashare/genref_hadaca3/
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/genref_hadaca2_meth.rds   ~/projects/datashare/genref_hadaca3/
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/genref_hadaca2_rna.rds    ~/projects/datashare/genref_hadaca3/
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/00_peng_k_2019.rds        ~/projects/datashare/genref_hadaca3/
-rsync -auvP dahu.ciment:/bettik/richamag/projects/pancreas_deconv_data/results/20210624/02.1_output/peng_pool_labelled.rds ~/projects/datashare/pancreas_deconv_data/results/20210624/02.1_output/
-
-rsync -auvP dahu.ciment:/bettik/lamothlu/projects/datashare/genref_hadaca3/lin_pool_labelled.rds  ~/projects/datashare/genref_hadaca3/
-```
-
-01.2_dataset_insilicopseudobulk.Rmd takes took long to run (~ 2h) 
-For now you will need to rsync : 
-
-~/projects/datashare/genref_hadaca3/pseudobulk_mix/* (Lucie) 
-
-If you want to run all of the chunks of the code you will still need to rsync this file for pseudo sc meth generation:
-
-~/projects/datashare/genref_hadaca3/cpg_probes_400k
-
-
-Theses files or folder can be retrieved for instance with the command : 
-```
-```
+- All simulation parameters are documented within each script.
+- The datasets are also available on Zenodo (DOI available after review).
