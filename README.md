@@ -237,7 +237,7 @@ Key functions:
 | `read_hdf5(path)` | Read all sub-datasets from a path |
 | `write_global_hdf5(path, data_list)` | Write all sub-datasets |
 
-All HDF5 files use gzip compression (level 6) with shuffling for reduced storage footprint. Files can be explored interactively at [h5web.panosc.eu](https://h5web.panosc.eu/) or H5Web VS Code extension  or the command-line tool `h5dump` the linux command H5dump. 
+All HDF5 files use gzip compression (level 6) with shuffling for reduced storage footprint. Files can be explored interactively at [h5web.panosc.eu](https://h5web.panosc.eu/) or H5Web VS Code extension  or the command-line tool `h5dump`. 
 
 ---
 
