@@ -1,4 +1,4 @@
-# Benchmaaaark 
+# Benchmark 
 
 
 ## how to run this benchmark 
