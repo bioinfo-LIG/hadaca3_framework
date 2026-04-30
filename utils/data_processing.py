@@ -14,95 +14,6 @@ compression_lvl = 6
 compression_type = "gzip"
 
 
-# file_path = "sparse_matrix.h5"
-
-
-
-# def save_sparse_hdf5(file_path, counts_adata, metadata):
-#     """
-#     Saves a sparse matrix (counts) and metadata (pandas DataFrame) to an HDF5 file.
-#     """
-
-#     counts =  csc_matrix(counts_adata.X.T)
-#     with h5py.File(file_path, "w") as f:
-#         # Save sparse matrix
-#         group_counts = f.create_group("counts")
-#         group_counts.create_dataset("data", data=counts.data, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.data))  ,shuffle=True) #False)
-#         group_counts.create_dataset("shape", data=counts.shape, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.shape))  ,shuffle=True) #False)
-#         group_counts.create_dataset("indices", data=counts.indices, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.indices))  ,shuffle=True) #False)
-#         group_counts.create_dataset("indptr", data=counts.indptr, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.indptr))  ,shuffle=True) #False)
-
-#         # Save row and column names
-#         # if counts.shape[0] == len(counts_adata.var.index):  # Ensure rownames match
-#         # group_counts.create_dataset("genes", data=np.array(counts_adata.var.index), compression=compression_type, compression_opts=compression_lvl, chunks=True)  # Convert to bytes
-#         # if counts.shape[1] == len(counts_adata.var.index):  # Ensure colnames match
-#         # group_counts.create_dataset("", data=np.array(counts_adata.obs.index), compression=compression_type, compression_opts=compression_lvl, chunks=True)  
-        
-#         group_counts.create_dataset("genes", data=np.array([x.encode('utf-8') for x in counts_adata.var.index]), compression=compression_type, compression_opts=compression_lvl,shuffle=True)
-#         group_counts.create_dataset("cells", data=np.array([x.encode('utf-8') for x in counts_adata.obs.index]), compression=compression_type, compression_opts=compression_lvl,shuffle=True)   
-
-#         # Save metadata (as a structured array)
-#         # group_meta = f.create_group("meta")
-#         # group_meta.create_dataset("/meta",data= metadata, compression=compression_type, compression_opts=compression_lvl  ,shuffle=True)
-#         # metadata.to_hdf(file_path, key="meta/meta", mode="a")  # Append mode
-
-# file_path_to_save = "sparse_matrix_py3.h5"
-
-
-# # # Example Sparse Matrix
-# # counts = csr_matrix(np.random.randint(0, 5, size=(1000, 500)))  # 1000 x 500 sparse matrix
-# # metadata = pd.DataFrame({"cell_type": ["A"] * 500, "batch": ["1"] * 500}, index=[f"Cell{i}" for i in range(500)])
-
-# # # Save to HDF5
-# save_sparse_hdf5(file_path_to_save, adata, metadata)
-
-
-
-
-# def load_sparse_hdf5(file_path):
-#     # """
-#     # Loads a sparse matrix (counts) and metadata from an HDF5 file.
-#     # """
-#     with h5py.File(file_path, "r") as f:
-#         # Load sparse matrix
-#         data = f["counts/data"][:]
-#         indices = f["counts/indices"][:]
-#         indptr = f["counts/indptr"][:]
-#         shape = tuple(f["counts/shape"][:])
-#         adata = ad.AnnData(csc_matrix((data, indices, indptr), shape=shape,dtype=np.int32).T)
-
-#         # Load row and column names
-#         rownames = [x.decode("utf-8") for x in f["counts/rownames"][:]] if "counts/rownames" in f else None
-#         colnames = [x.decode("utf-8") for x in f["counts/colnames"][:]] if "counts/colnames" in f else None
-
-#     if rownames is not None:
-#         adata.var_names = rownames
-
-#         # Set the column names (gene names) in the AnnData object
-#     if colnames is not None:
-#         adata.obs_names  = colnames
-
-#         # Load metadata
-#     metadata = pd.read_hdf(file_path, key="metameta")
-#     metadata.index = colnames  # Restore rownames
-
-#     return adata, metadata
-
-# # Load Data
-# adata, metadata = load_sparse_hdf5(file_path)
-
-# print(sparse_restored)
-# print(meta_restored.head())
-
-# def encode_strings(data):
-#     """Encode all string-like objects in a DataFrame or array to byte strings."""
-#     if isinstance(data, pd.DataFrame):
-#         return data.applymap(lambda x: x.encode('utf-8') if isinstance(x, str) else x)
-#     elif isinstance(data, np.ndarray):
-#         return np.vectorize(lambda x: x.encode('utf-8') if isinstance(x, str) else x)(data)
-#     else:
-#         return data
-
 def read_all_ref_hdf5(path):
     with h5py.File(path, "r") as f:
         # Read ref_bulkRNA data
@@ -160,51 +71,6 @@ def read_all_ref_hdf5(path):
         }
 
     return ref_all
-
-# file = 'sparse_matrix_R2.h5'
-
-# ref = read_all_ref_hdf5(file)
-
-
-
-# def save_sparse_hdf5(file_path, counts_adata, metadata):
-#     """
-#     Saves a sparse matrix (counts) and metadata (pandas DataFrame) to an HDF5 file.
-#     """
-
-#     counts =  csc_matrix(counts_adata.X.T)
-#     with h5py.File(file_path, "w") as f:
-#         # Save sparse matrix
-#         group_counts = f.create_group("counts")
-#         group_counts.create_dataset("data", data=counts.data, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.data))  ,shuffle=True) #False)
-#         group_counts.create_dataset("shape", data=counts.shape, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.shape))  ,shuffle=True) #False)
-#         group_counts.create_dataset("indices", data=counts.indices, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.indices))  ,shuffle=True) #False)
-#         group_counts.create_dataset("indptr", data=counts.indptr, compression=compression_type, compression_opts=compression_lvl , chunks= (len(counts.indptr))  ,shuffle=True) #False)
-
-#         # Save row and column names
-#         # if counts.shape[0] == len(counts_adata.var.index):  # Ensure rownames match
-#         # group_counts.create_dataset("genes", data=np.array(counts_adata.var.index), compression=compression_type, compression_opts=compression_lvl, chunks=True)  # Convert to bytes
-#         # if counts.shape[1] == len(counts_adata.var.index):  # Ensure colnames match
-#         # group_counts.create_dataset("", data=np.array(counts_adata.obs.index), compression=compression_type, compression_opts=compression_lvl, chunks=True)  
-        
-#         group_counts.create_dataset("genes", data=np.array([x.encode('utf-8') for x in counts_adata.var.index]), compression=compression_type, compression_opts=compression_lvl,shuffle=True)
-#         group_counts.create_dataset("cells", data=np.array([x.encode('utf-8') for x in counts_adata.obs.index]), compression=compression_type, compression_opts=compression_lvl,shuffle=True)   
-
-#         # Save metadata (as a structured array)
-#         # group_meta = f.create_group("meta")
-#         # group_meta.create_dataset("/meta",data= metadata, compression=compression_type, compression_opts=compression_lvl  ,shuffle=True)
-#         # metadata.to_hdf(file_path, key="meta/meta", mode="a")  # Append mode
-
-# file_path_to_save = "sparse_matrix_py3.h5"
-
-
-# # Example Sparse Matrix
-# counts = csr_matrix(np.random.randint(0, 5, size=(1000, 500)))  # 1000 x 500 sparse matrix
-# metadata = pd.DataFrame({"cell_type": ["A"] * 500, "batch": ["1"] * 500}, index=[f"Cell{i}" for i in range(500)])
-
-# # Save to HDF5
-# save_sparse_hdf5(file_path_to_save, adata, metadata)
-
 
 
 def write_all_ref_hdf5(path, ref_all):
@@ -269,20 +135,6 @@ def write_all_ref_hdf5(path, ref_all):
 
 
 
-# file = 'ref_sc_peng.h5'
-# write_all_ref_hdf5(file, ref)
-# meta = ref['ref_scRNA']['ref_sc_baron']['metadata']
-
-# for col in meta.columns:
-#     if pd.api.types.is_integer_dtype(meta[col]):  # If the column is integer, store as int32
-#         dtype_list.append((col, np.int32))
-#     else:  # Otherwise, store as a UTF-8 string
-#         dtype_list.append((col, h5py.string_dtype('utf-8')))
-
-
-
-
-
 def write_sparse_matrix(group, fw, counts, meta, data=None, scale_data=None,
                         compression_type="gzip", compression_lvl=6):
 
@@ -337,9 +189,6 @@ def write_global_hdf5(path, data_list, compression_type="gzip", compression_lvl=
                     group_path = f"ref_scRNA/{dataset}"
                     group = fw.create_group(group_path)
 
-                    # seurat_obj = None
-                    # seurat_field_name = None
-                    # group_seurat_path = group_path
 
                     # Check if dataset is Seurat-like object (dict with laye        rs)
                     if "counts" in data_list[name][dataset] and "metadata" in data_list[name][dataset]:
@@ -356,8 +205,6 @@ def write_global_hdf5(path, data_list, compression_type="gzip", compression_lvl=
                             scale_data = data_list[name][dataset]["scale.data"]
 
                         # # Write marker that this is a Seurat-like object
-                        # group.create_dataset("object_type", data="seurat")
-                        # group.create_dataset("seurat_field_name", data=str(dataset))
 
                         write_sparse_matrix(group, fw, counts, meta, data=data, scale_data=scale_data,
                                             compression_type=compression_type, compression_lvl=compression_lvl)
@@ -376,8 +223,6 @@ def write_global_hdf5(path, data_list, compression_type="gzip", compression_lvl=
                 df_group.create_dataset("data",data=df.T, compression=compression_type, compression_opts=compression_lvl)
                 df_group.create_dataset("samples",data=list(map(str,df.columns)), compression=compression_type, compression_opts=compression_lvl)
                 df_group.create_dataset("genes",data=list(map(str,df.index)), compression=compression_type, compression_opts=compression_lvl)
-                # for col in df.columns:
-                #     df_group.create_dataset(col, data=np.array(df[col]), compression=compression_type, compression_opts=compression_lvl)
 
 
 def set_dataframe_index_and_columns(group, group_name, df):
@@ -507,22 +352,3 @@ def read_hdf5(path):
 
     return data_list
 
-
-
-
-# file= "data/ref.h5"
-# r_ref = read_hdf5(file)
-
-
-# # file= "data/mixes1_insilicodirichletCopule_pdac.h5"
-# file= "data/mixes1_invitro_pdac.h5"
-# r =  read_hdf5(file)
-
-
-# # path = file
-
-
-
-# test_f = 'tmp.h5'
-
-# write_global_hdf5(test_f,r_ref )
