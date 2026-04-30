@@ -63,7 +63,7 @@ cd hadaca3_framework
 conda create -y -n hadaca3framework_env
 conda activate hadaca3framework_env
 
-mamba install -y -c bioconda -c conda-forge -c r \
+conda install -y -c bioconda -c conda-forge -c r \
     snakemake python r-base r-rmarkdown r-nnls r-seurat \
     bioconductor-rhdf5 bioconductor-mixOmics bioconductor-edgeR \
     r-quadprog r-coda.base r-dt bioconductor-toast \
@@ -206,7 +206,7 @@ Optional fields:
 
 Functions are declared in the `function_blocks`.
 
-All functions share the same signature:
+All functions within a given function type share the same signature:
 
 ```r
 program_block_PP <- function(data, path_og_dataset='', omic='') { #PP stands for preprocessing
@@ -218,7 +218,7 @@ program_block_PP <- function(data, path_og_dataset='', omic='') { #PP stands for
 }
 ```
 
-Use `read_all_ref_hdf5()` or `read_hdf5()` from `utils/data_processing.R` to load reference data (already sourced — no need to re-source).
+Each function is invoked through a wrapper responsible for data handling.
 
 > **Tip:** Use the identity function (e.g., `ppID`) as a template. It returns data unchanged and serves as the no-op baseline.
 
@@ -234,12 +234,10 @@ Key functions:
 
 | Function | Description |
 |----------|-------------|
-| `read_all_hdf5(path, to_read=c('mix','ref'))` | Read full multi-data object |
-| `write_all_hdf5(path, multi_data)` | Write full multi-data object |
 | `read_hdf5(path)` | Read all sub-datasets from a path |
 | `write_global_hdf5(path, data_list)` | Write all sub-datasets |
 
-All HDF5 files use gzip compression (level 6) with shuffling for reduced storage footprint. Files can be explored interactively at [h5web.panosc.eu](https://h5web.panosc.eu/) or with the VS Code extension *H5Web*.
+All HDF5 files use gzip compression (level 6) with shuffling for reduced storage footprint. Files can be explored interactively at [h5web.panosc.eu](https://h5web.panosc.eu/) or H5Web VS Code extension  or the command-line tool `h5dump` the linux command H5dump. 
 
 ---
 
@@ -253,7 +251,7 @@ Two CI pipelines are configured:
 | **Full** | Daily at 3am (if modified) | Re-runs all tasks from scratch to verify reproducibility |
 
 To skip CI on a commit, include one of the following keywords in the commit message: `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`.
-
+The incremental CI pipeline resumes execution by reading the selected functions from `function_metadata_and_selection/CI_functions_selection`
 
 ---
 
