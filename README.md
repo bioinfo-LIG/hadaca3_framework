@@ -4,54 +4,21 @@ A framework to collectively develop multi-omic deconvolution methods.
 
 The core idea is of this framework is to combine function blocks together to help compare the use of any combination of pre-processing, features selection, deconvolution algorithms and integration of each individual omic type : RNA, Methylation and Single cells. 
 
-## How to Add Your Function to the Pipeline
-
-This project is designed to be **extensible**—you can easily add new functions for the following [block types](#blocks-description):
-- Pre-processing
-- Feature selection
-- Deconvolution
-- Late integration
-- Early integration
-
-**Supported languages:** R and Python.
-*Note:* For now, only **early integration functions** are fully compatible with Python. Python support for other block types can be added—contributions are welcome!
 ---
 
-### Steps to Add Your Function
+## Folder Structure
 
-#### 1. **Add Function Metadata**
-Edit the **YAML metadata file** corresponding to your function’s block type. The YAML files are named as follows:
-- `datasets.yml`
-- `preprocessing.yml` (pp)
-- `feature_selection.yml` (fs)
-- `deconvolution.yml` (de)
-- `early_integration.yml` (ei)
-- `late_integration.yml` (li)
+```
+00_paper_reproducibility/    			# Scripts to reproduce the paper datasets and figure
+function_blocks_/            			# Scripts of each method in each module of the modular benchmark
+function_metada_and_selection_/         # Scripts to reproduce the benchmark
+          # Code to reproduce all figures in the paper
+```
 
-By default functions are selected from the folder "function_metada_and_selection/CI_functions_selection/*.yml". 
-A minimal test setup is available under "function_metada_and_selection/local_test_setup"
-
-For a detailed description of the metadata structure, see the [YML Metadata Section](#yml-metadata).
-
-#### 2. **Add Your Function Code**
-- Place your function code in the **appropriate folder** for its block type.
-- **Update the YAML metadata** to include the correct path to your function.
 
 ---
+## How to run the benchmark?
 
-### Best Practices
-- **Use the identity function as a template**:
-  Mimic the behavior of the identity function (e.g., `ppID` for pre-processing). These functions act as a baseline and **do not modify the input data**, making them ideal references for consistency.
-
-- **Test locally before submitting**:
-  - Download the datasets and **test your function locally** using a reduced subset of the data.
-  - Run the pipeline with your function by following the instructions in the **[Nextflow section](#nextflow)**.
-  - Refer to the `function_metada_and_selection/setups/` folder for subset configuration examples.
-
-- **Automated CI evaluation**:
-  Once pushed, your code will **automatically run on the CI**, and the results will be available on the GitHub page.
-
-# How to run locally?
 
 ```
 cd ~/projects
@@ -213,6 +180,60 @@ nextflow run 00_run_pipeline.nf  -with-report -resume --setup_folder function_me
 
 
 
+
+---
+
+## How to Add Your Function to the Pipeline
+
+This project is designed to be **extensible**—you can easily add new functions for the following [block types](#blocks-description):
+- Pre-processing
+- Feature selection
+- Deconvolution
+- Late integration
+- Early integration
+
+**Supported languages:** R and Python.
+*Note:* For now, only **early integration functions** are fully compatible with Python. Python support for other block types can be added—contributions are welcome!
+---
+
+### Steps to Add Your Function
+
+#### 1. **Add Function Metadata**
+Edit the **YAML metadata file** corresponding to your function’s block type. The YAML files are named as follows:
+- `datasets.yml`
+- `preprocessing.yml` (pp)
+- `feature_selection.yml` (fs)
+- `deconvolution.yml` (de)
+- `early_integration.yml` (ei)
+- `late_integration.yml` (li)
+
+By default functions are selected from the folder "function_metada_and_selection/CI_functions_selection/*.yml". 
+A minimal test setup is available under "function_metada_and_selection/local_test_setup"
+
+For a detailed description of the metadata structure, see the [YML Metadata Section](#yml-metadata).
+
+#### 2. **Add Your Function Code**
+- Place your function code in the **appropriate folder** for its block type.
+- **Update the YAML metadata** to include the correct path to your function.
+
+
+
+### Best Practices
+- **Use the identity function as a template**:
+  Mimic the behavior of the identity function (e.g., `ppID` for pre-processing). These functions act as a baseline and **do not modify the input data**, making them ideal references for consistency.
+
+- **Test locally before submitting**:
+  - Download the datasets and **test your function locally** using a reduced subset of the data.
+  - Run the pipeline with your function by following the instructions in the **[Nextflow section](#nextflow)**.
+  - Refer to the `function_metada_and_selection/setups/` folder for subset configuration examples.
+
+- **Automated CI evaluation**:
+  Once pushed, your code will **automatically run on the CI**, and the results will be available on the GitHub page.
+
+---
+
+## More informations
+
 ### Continuous Integration description 
 There are two types of contiuous integration (CI). 
 - One partial which is executed every comit and that will continue tasks not completed yet (it run the pipeline with the command `-resume`).
@@ -228,52 +249,6 @@ Also it is possible to skip the execution of the partial CI by adding one of the
 - [no ci]
 - [skip actions]
 - [actions skip]
-
-## Blocks description
-
-
-This framework contains several blocks
-
-- **preprocessing** :  This block is responsible for preparing the raw data for analysis. It includes tasks such as cleaning the data (handling missing values, removing duplicates), normalizing or scaling features, encoding categorical variables, and other transformations to make the data suitable for modeling. This block takes as input multi_data and returns multi-data (see below for details).
-  
-- **feature_selection** : This block focuses on selecting the most relevant features (genes or Cpg sites) to use in the model. It helps in reducing the dimensionality of the data, improving model performance, and reducing overfitting by eliminating irrelevant or redundant features. This block takes as input multi_data and returns multi-data (see below for details).
-  
-- **deconvolution** : This block contains the algorithm that does the deconvolution, such as lm, rlr, nnls...  This block takes as input uni-data and returns a prediction (see below for details).
-  
-- **split** : This block splits multi-omics (methylation and RNA) data to only methylation and only RNA. This block takes as input multi_data and returns each sort of uni-data (see below for details).
-
-- **early_int** : This block involves combining multiple omics data types (e.g., RNA, MET) into a unified dataset before applying deconvolution. It is part of pipeline B. This block takes as input multi_data and returns uni-data (see below for details).
-  
-- **late_int** : This block focuses on integrating the predictions from multiple omics into a single prediction. It is part of pipeline A. This block takes as input a list of several (2) predictions and returns one prediction (see below for details).
-  
-- **intermediate_int** : This block combines both integration and deconvolution processes of multiple omics. It is part of pipeline C. This block takes as input multi_data and returns a prediction (see below for details).
-
-
-## Data types: 
-
-Each fonction (preprocess, feature selection, ...) is dealing with one only one kind of omic: (mixRNA, mixMET, ref_MET, ref_bulkRNA, ref_scRNA).
-In this code, the omic name RNA, MET, scRNA refers to ref_bulkRNA, ref_MET, and ref_scRNA respectively. 
-ref_scRNA contains 3 differents datasets, and they are differentiated in the scripts with is.list
-
-
-rna_unit and met_unit used in early integration : 
-
-```
-rna_unit
-├──mix
-├──ref
-└──ref_scRNA
-   ├── ref_sc_peng
-   ├── ref_sc_baron
-   └── ref_sc_raghavan
-```
-
-```
-met_unit
-├──mix
-└──ref
-```
-
 
 
 
@@ -377,16 +352,4 @@ For instance, data_list contains prop1 and prop2, *write_global_hdf5(file,data_l
 All data should have HDF5 format with a compression level set to 6 and 'gzip' as the compression algorithm. Furthermore, to reduce storage footprints, the data are shuffled and written in one single chunk (chunk size = length(data)). *HDF5 shuffling does not impact order of the uncompressed file*.
 
 
-# Benchmark of nextflow vs snakemake
-
-There is a benchmark of snakemake vs nextflow. 
-The motivation behind the developpement of nextflow is the mandatory step of DAG creation in snakemake which is very time consuming. 
-
-See the README.md inside benchmark folder. 
-
-## TODO
-
-
-* Deconvolution need -> for instance a decovolution tool needs a specific scRNA...
-* Early integration -> done but to test  !
 

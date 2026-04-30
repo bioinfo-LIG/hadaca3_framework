@@ -1,0 +1,119 @@
+---
+title: "HADACA3 - Generate smoothies data for data challenge hadaca"
+author: "Florent Chuffart"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_document:
+---
+
+```{r, include=(FALSE)}
+knitr::opts_chunk$set(collapse=TRUE, comment="#>", fig.width=9, fig.height=6, eval=TRUE, echo=TRUE, results="verbatim")
+options(knitr.duplicate.label = "allow")
+```
+
+# Parameters
+
+Here we set up input and outputs files for the vignette.
+
+```{r params}
+if (!exists("source_file")) {source_file = "01_references/source_fruits.rds"}
+if (!exists("reference_file")) {reference_file = "01_references/reference_fruits.rds"} 
+if (!exists("mixes_files")) {mixes_files = c("01_mixes/mixes1_smoothies_fruits.rds", "01_mixes/mixes2_smoothies_fruits.rds")} 
+if (!exists("groundtruth_files")) {groundtruth_files = c("01_groundtruth/groundtruth1_smoothies_fruits.rds", "01_groundtruth/groundtruth2_smoothies_fruits.rds")}
+```
+
+# Generates reference
+
+```{r}
+set.seed(10)
+
+# fruit profiles matrix
+fruit_refs = rbind(
+  vitA=log2(rpois(10, 100)   ),
+  vitB=log2(rpois(10, 200)   ),
+  vitC=log2(rpois(10, 300)   ),
+  vitD=log2(rpois(10, 500)   ),
+  vitE=log2(rpois(10, 1000)  ),
+  vitF=log2(rpois(10, 2000)  ),
+  vitG=log2(rpois(10, 3000)  ),
+  vitH=log2(rpois(10, 5000)  ),
+  vitI=log2(rpois(10, 10000) ),
+  vitJ=log2(rpois(10, 20000) ),
+  vitK=log2(rpois(10, 30000) ),
+  vitL=log2(rpois(10, 50000) ),
+  vitM=log2(rpois(10, 100000)),
+  vitN=log2(rpois(10, 200000)),
+  vitO=log2(rpois(10, 300000)),
+  vitP=log2(rpois(10, 500000))
+)
+colnames(fruit_refs) = c("Apple", "Banan", "Orang", "Grape", "Mango", "Straw","Pinea", "Blueb", "Water", "Peach")
+```
+
+# Generates dataset
+
+```{r}
+# fruit proportion matrix
+recipes = sapply(paste0("recipe", 1:10), function(recipe) {
+  foo = c(sort(runif(ncol(fruit_refs)-1)),1)
+  prop = c(foo[1], foo[-1] - foo[-length(foo)])
+  sum(prop) 
+  prop
+})
+rownames(recipes) = colnames(fruit_refs)
+
+# check that for each recipe the sum of proporttion is equal to 1
+apply(recipes, 2, sum)
+
+# generate smoothies as combination of fruits and recipes and gaussian error
+smoothies = fruit_refs %*% recipes# + rpois(10, lambda = 0.5))
+# error = t(sapply(.1*apply(smoothies, 1, sd), rnorm, n=ncol(smoothies), mean=0))
+# smoothies = smoothies + error
+
+poisson_error = matrix(rpois(length(smoothies), lambda = 0.5), nrow = nrow(smoothies), ncol = ncol(smoothies))
+error = t(sapply(.3*apply(smoothies, 1, sd), rnorm, n=ncol(smoothies), mean=0))
+
+# Adding the Poisson error to the smoothies
+smoothies = smoothies + error 
+
+# predict recipes with NNLS
+predicted_recipes = apply(
+  X = smoothies,
+  MARGIN = 2,
+  FUN = nnls::nnls,
+  A = fruit_refs
+)
+```
+
+
+# Prediction
+
+```{r}
+predicted_recipes = lapply(predicted_recipes, function(m) m$x)
+predicted_recipes = lapply(predicted_recipes, function(b) {b/sum(b)})
+predicted_recipes = do.call(cbind, predicted_recipes)
+rmse = sqrt(mean((predicted_recipes - recipes)^2))
+rmse
+```
+
+# Save
+
+```{r save}
+groundtruth_smoothies = recipes
+mixes_smoothies       = smoothies
+reference_smoothies   = fruit_refs
+
+saveRDS(groundtruth_smoothies, paste0("../",groundtruth_files[1]))
+saveRDS(groundtruth_smoothies, paste0("../",groundtruth_files[2]))
+saveRDS(mixes_smoothies, paste0("../",mixes_files[1]))
+saveRDS(mixes_smoothies, paste0("../",mixes_files[2]))
+saveRDS(reference_smoothies, paste0("../",source_file))
+saveRDS(reference_smoothies, paste0("../",reference_file))
+```
+
+
+
+# Session Information
+
+```{r, results="verbatim"}
+sessionInfo()
+```
