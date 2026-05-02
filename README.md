@@ -23,7 +23,7 @@ This framework provides a **modular Nextflow pipeline** that systematically eval
 - **Deconvolution** algorithms 
 - **Multi-omics integration** strategies 
 
-Over **270,000 pipeline combinations** were evaluated across **9 benchmark datasets** spanning *in silico*, *in vitro*, and *in vivo* settings.
+Over **250,000 pipeline combinations** were evaluated across **9 benchmark datasets** spanning *in silico*, *in vitro*, and *in vivo* settings.
 
 ---
 
