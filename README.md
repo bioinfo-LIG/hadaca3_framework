@@ -161,15 +161,21 @@ Bulk RNA + DNAm data
     │         │
     ▼         ▼
 [Pipeline A]  [Pipeline B]
-Late integr.  Early integr.  ← function_metadata_and_selection/template_complete_run/early_integration.yml
+Late integr.  Early integr.  
     │         │
+    │         ▼
+    │     ┌──────┐
+    │     │ Int. │                         ← function_metadata_and_selection/template_complete_run/early_integration.yml
+    │     └───┬──┘
     ▼         ▼
-Deconvolution (per modality or joint)  ← function_metadata_and_selection/template_complete_run/deconvolution.yml
-    │
-    ▼
-Integration  ← function_metadata_and_selection/template_complete_run/late_integration.yml 
-    │
-    ▼
+┌───────────────┐
+│ Deconvolution │ (per modality or joint)  ← function_metadata_and_selection/template_complete_run/deconvolution.yml
+└───┬───────────┘
+    ▼         │  
+┌──────┐      │  
+│ Int. │      │  
+└───┬──┘      │                            ← function_metadata_and_selection/template_complete_run/late_integration.yml 
+    ▼         ▼
 Cell-type proportion estimates
 ```
 
