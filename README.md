@@ -125,7 +125,7 @@ nextflow run 00_run_pipeline.nf -stub -resume
 nextflow run 00_run_pipeline.nf -with-dag -with-report -with-trace -with-timeline
 
 # Run with a specific benchmark setup
-nextflow run 00_run_pipeline.nf -resume --setup_folder benchmark/setup/1/
+nextflow run 00_run_pipeline.nf -resume --setup_folder function_metadata_and_selection/Local_test_setup/
 ```
 
 ### 5. Run the meta-analysis
@@ -135,7 +135,7 @@ nextflow run 00_run_pipeline.nf -resume --setup_folder benchmark/setup/1/
 # URLs will be provided upon completion of the review process.
 # wget <zenodo_url>/results_ei.csv.gz
 # wget <zenodo_url>/results_li.csv.gz
-
+Rscript wrapper/08_metaanalysis.Rmd
 ```
 
 ---
