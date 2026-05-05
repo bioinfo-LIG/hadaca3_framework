@@ -28,8 +28,7 @@ It is called the joker method in memory of the team J that posted this method.
 
 * benchmark_unimodal_onlyRNA:
     RNA(LogNorm, Toastbulknbfs, RLRpoisson)
-
-
+    
 ## Best Early integration methods : 
 
 * benchmark_early_integration_concatnoscale 

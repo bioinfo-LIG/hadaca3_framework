@@ -1,7 +1,17 @@
-# Benchmark 
+# Functions metadata
 
 
-## how to run this benchmark 
+This folder contains various setups for selecting and describing functions to be included in the Nextflow pipeline.
+Folder contents:
+
+    * `CI_functions_selection`: Used for running the pipeline with the resume CI.
+    * `limited_EI`: Created to test with a subset of the full dataset, generating all combinations. All selections (except dataset.yml) are symbolic links from the `template_complete_run` folder.
+    * `setup`: Contains several setups used for benchmarking Snakemake vs. Python, or for benchmarking specific functions.
+    * `Local_test_setup`: A small subset of function selections used for the Full CI and local pipeline testing.
+
+
+## Benchamark to test snakemake vs nextflow 
+/!\ Change branch to `smk_nf_used_for_benchmark`
 
 ```
 cd benchmark
