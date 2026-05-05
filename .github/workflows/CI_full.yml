@@ -6,7 +6,7 @@ on:
     
 jobs:
   check_date:
-    if: false 
+    # if: false 
     runs-on: self-hosted
     timeout-minutes: 5760  
     name: Check latest commit
@@ -23,13 +23,14 @@ jobs:
         run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
 
   CI_full_Pipeline_scheduled:
-    if : false
-#     if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    # if : false
+    if: ${{ needs.check_date.outputs.should_run != 'false' }}
     runs-on: self-hosted
     timeout-minutes: 5760  
     env:
       CONDA: "/home/ubuntu/miniconda3/etc/profile.d/conda.sh"
       CONDA_ENV_NAME: "hadaca3framework_env"
+      DATA_DIR: "/home/github-runner/projects/hadaca3_framework/data/" 
       SNK_CORES: "2"
       MEM_MB: "32000"
 
@@ -50,31 +51,15 @@ jobs:
             eval "$line"
           done
       
-      - name: download data
+      - name: Link data
         run: |
           mkdir data
           cd data
-          awk '/```{Automatic CI-data}/{f=1; next} f && /```/{f=0; exit} f && /wget/' ../README.md | while read -r line; do
-            echo "$line"
-            eval "$line"
-          done
+          ln -s ${{ env.DATA_DIR }}* .
 
-      - name: Run pipeline
+      - name: Run test pipeline
         run: |
           source "${{ env.CONDA }}" 
           conda activate ${{ env.CONDA_ENV_NAME }}
-          # snakemake --cores ${{ env.SNK_CORES }} -s 00_run_pipeline.smk -p clean
-          # snakemake --cores ${{ env.SNK_CORES }} -s 00_run_pipeline.smk -p --resources mem_mb=${{ env.MEM_MB }} --max-jobs-per-second 1
-          nextflow run 00_run_pipeline.nf -with-report
-          mkdir -p public
-          cp 07_metaanalysis.html public/metaanalysis.html
-          LATEST_REPORT=$(ls -t report-* | head -n 1)
-          cp $LATEST_REPORT public/nextflow-report.html
-          cp index.html public/index.html
-      
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          nextflow run 00_run_pipeline.nf --setup_folder function_metadata_and_selection/Local_test_setup/
 

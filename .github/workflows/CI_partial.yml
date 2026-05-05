@@ -56,13 +56,6 @@ jobs:
               echo "Skipping $filename (already exists)"
             fi
           done
-          # cd ${{ env.REPO_DIR }}
-          # mkdir -p data
-          # cd data
-          # awk '/```{Automatic CI-data}/{f=1; next} f && /```/{f=0; exit} f && /wget/' ../README.md | while read -r line; do
-          #   echo "$line"
-          #   eval "$line"
-          # done
 
       - name: Run pipeline
         # continue-on-error: true  This will not show an error if the pipeline fail  !
@@ -70,13 +63,6 @@ jobs:
           cd ${{ env.REPO_DIR }}
           source "${{ env.CONDA }}" 
           conda activate ${{ env.CONDA_ENV_NAME }}
-          # git fetch --all
-          # git reset --hard ${{ github.sha }}
-          # snakemake --cores ${{ env.SNK_CORES }} -s 00_run_pipeline.smk -p clean
-          # snakemake --cores ${{ env.SNK_CORES }} -s 00_run_pipeline.smk -p --resources mem_mb=${{ env.MEM_MB }} --max-jobs-per-second 1
-          # nextflow run 00_run_pipeline.nf -resume -with-report --setup_folder benchmark/setup/1/
-          
-          # nextflow run 00_run_pipeline.nf -resume -with-report 
 
           # Start nextflow in the background and redirect output to log.txt
           rm -f log.txt
@@ -84,8 +70,6 @@ jobs:
           rm -rf 08_metaanalysis.html
           rm -rf 07_metaanalysis_files
           rm -rf 07_metaanalysis.html
-          # rm -rf results_li*.csv.gz
-          # rm -rf results_ei*.csv.gz
 
           nextflow run 00_run_pipeline.nf -resume -with-report > log.txt 2>&1 &
 
@@ -121,15 +105,13 @@ jobs:
           LATEST_LI=$(ls -t results_li* | head -n 1)
           LATEST_EI=$(ls -t results_ei* | head -n 1)
           
-          # cp results_li*.csv.gz ${{ github.workspace }}/public/
           cp $LATEST_LI ${{ github.workspace }}/public/results_li.csv.gz
-          # cp results_ei*.csv.gz ${{ github.workspace }}/public/
           cp $LATEST_EI ${{ github.workspace }}/public/results_ei.csv.gz
 
           exit $EXIT_CODE
 
       - name : copy report if failure 
-        if : failure()  # always() always will run even if cancelled manually   #failure()
+        if : failure() 
         run : |
           cd ${{ env.REPO_DIR }}
           echo "===== Log failled snapshot at $(date) ====="
