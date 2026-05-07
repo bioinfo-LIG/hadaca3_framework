@@ -24,16 +24,6 @@ process_file() {
     local file="$1"
     local METRIC_COLS="aid aid_norm aitchison aitchison_norm jsd jsd_norm mae mae_norm pearson_col pearson_col_norm pearson_row pearson_row_norm pearson_tot pearson_tot_norm rmse rmse_norm score_aggreg sdid sdid_norm spearman_col spearman_col_norm spearman_row spearman_row_norm spearman_tot spearman_tot_norm"
 
-    # echo $PATH >&2 
-    # echo $(which h5dump) >&2
-    # echo PWD =  $(pwd) >&2
-    # echo $(ls -rthl $1 ) >&2
-    # echo $(h5dump $file ) >&2
-
-
-    # echo COLS =  $METRIC_COLS >&2
-    # echo $(which gawk)
-
     local base
     base=$(basename "$file")
 
@@ -122,7 +112,6 @@ export -f process_file
 
 # ── find files ────────────────────────────────────────────────────────────────
 echo "Scanning $SCORE_DIR for score-ei-*.h5 ..." >&2
-# mapfile -t FILES < <(find "$SCORE_DIR" -maxdepth 1 -name 'score-ei-*.h5' -type f | sort)
 mapfile -t FILES < <(find "$SCORE_DIR" -maxdepth 1 -name 'score-ei-*.h5'  | sort)
 TOTAL=${#FILES[@]}
 echo "Found $TOTAL files — processing with $JOBS parallel jobs..." >&2
@@ -148,13 +137,5 @@ fi
     fi
 } | gzip -c > "$OUTPUT"
 
-# process_file ${FILES[1]}
-
-# echo "len=${#FILES[@]}"
-# echo "FILES[0]='${FILES[0]}'"
-# echo "FILES[1]='${FILES[1]}'"
-
-# # Et ce que printf envoie réellement
-# printf '%s\n' "${FILES[1]}" | cat -A
 
 echo "Done → $OUTPUT" >&2
