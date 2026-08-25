@@ -346,10 +346,15 @@ else{
                                      "pearson_col"=-1,
                                      "spearman_tot"=-1,
                                      "spearman_col"=-1,
-                                     "rmse"=eval_RMSE(A_real, fake_worst_pred),
-                                     "mae"=eval_MAE(A_real, fake_worst_pred),
-                                     "aitchison"=eval_Aitchison(A_real, fake_worst_pred), #verify it's the correct worst distance
-                                     "jsd"=eval_JSD(A_real, fake_worst_pred), #verify it's the correct worst divergence
+                                     "rmse"=1,
+                                     "mae"=1,
+                                     "aitchison"=1, #verify it's the correct worst distance
+                                     "jsd"=1, #verify it's the correct worst divergence
+                                     
+                                    #  "rmse"=eval_RMSE(A_real, fake_worst_pred),
+                                    #  "mae"=eval_MAE(A_real, fake_worst_pred),
+                                    #  "aitchison"=eval_Aitchison(A_real, fake_worst_pred), #verify it's the correct worst distance
+                                    #  "jsd"=eval_JSD(A_real, fake_worst_pred), #verify it's the correct worst divergence
                                      "sdid"=1,
                                      "aid"=90 #verify it's the correct worst angle in multi-D
                                      ))
@@ -391,8 +396,6 @@ all_scores <- c(
 )
 
 names(all_scores) <- c("score_aggreg", metrics, paste0(metrics, "_norm"))
-
-
   return(all_scores)
 }
 
@@ -502,32 +505,44 @@ plan(multicore)
 all_datasets <- intersect(dt_groundtruth$dataset, late_int$dataset)
 
 
+
+
+target_types <- c("basal", "classic")
+
+
 score_prediction <- function(meta_row, a_real) {
   # Extract path from the metadata row
   pred_path <- meta_row$full_path 
   
-  a_pred <- read_hdf5(pred_path)$pred 
-  a_pred = as.matrix(a_pred)
+  # --- Safe read attempt ---
+  a_pred <- tryCatch({
+    val <- read_hdf5(pred_path)$pred 
+    as.matrix(val)
+  }, error = function(e) {
+    # Log the specific file that failed
+    warning(paste("Skipping prediction file due to error:", pred_path, "-", e$message))
+    return(NULL) 
+  })
   
-  scores_full = scoring_function(A_real = a_real, A_pred = a_pred)
+  if (is.null(a_pred)) {
+    return(NULL)
+  }
+
+  a_pred_sub <- a_pred[target_types, , drop = FALSE]
+
+  scores_full = scoring_function(A_real = a_real, A_pred = a_pred_sub)
+  # scores_full = scoring_function(A_real = a_real, A_pred = a_pred)
   
-  # Create scores data.table
   res_dt <- as.data.table(t(as.matrix(scores_full)))
   colnames(res_dt) <- names(scores_full)
   
-
-  # 1. Convert to data.table and REMOVE the full_path column
   meta_dt <- as.data.table(meta_row)
-  meta_dt[, full_path := NULL] # This deletes the column in-place
-
-  # We use as.data.table(meta_row) to ensure it's a table before binding
-  final_dt <- cbind(as.data.table(meta_dt), res_dt)
+  meta_dt[, full_path := NULL] 
+  
+  final_dt <- cbind(meta_dt, res_dt)
   
   return(final_dt)
 }
-
-
-
 
 ## LI 
 final_output <- future_lapply(all_datasets, function(ds) {
@@ -536,12 +551,15 @@ final_output <- future_lapply(all_datasets, function(ds) {
   a_real  <- read_hdf5(gt_path)$groundtruth
   a_real = as.matrix(a_real)
 
+  a_real_sub <- a_real[target_types, , drop = FALSE]
+
+
   # B. Get all prediction paths associated with this dataset
   late_subset <- late_int[dataset == ds]
   # pred_paths <- late_int[dataset == ds, full_path]
   
   dataset_scores_list <- lapply(split(late_subset, seq_len(nrow(late_subset))), function(row) {
-    score_prediction(row, a_real)
+    score_prediction(row, a_real_sub)
   })
 
 
@@ -572,12 +590,15 @@ final_output_ei <- future_lapply(all_datasets, function(ds) {
   a_real  <- read_hdf5(gt_path)$groundtruth
   a_real = as.matrix(a_real)
 
+
+  a_real_sub <- a_real[target_types, , drop = FALSE]
+
   # B. Get all prediction paths associated with this dataset
   early_subset <- early_int[dataset == ds]
   # pred_paths <- late_int[dataset == ds, full_path]
   
   dataset_scores_list <- lapply(split(early_subset, seq_len(nrow(early_subset))), function(row) {
-    score_prediction(row, a_real)
+    score_prediction(row, a_real_sub)
   })
 
 
