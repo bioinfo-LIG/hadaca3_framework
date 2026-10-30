@@ -43,12 +43,12 @@ mostmethylated : # Use original ref_met to get most methylated #must be a unique
 Toastvst :  #must be a unique ID without _
  path: function_blocks/feature_selection/TOAST_vst.R
  short_name: Tvst
- omic: [mixRNA,RNA,scRNA]
+ omic: [mixRNA,RNA]
 
 Toastbulknbfs : #must be a unique ID without _
   path: function_blocks/feature_selection/TOAST_bulk_nbfs.R
   short_name: TNBR
-  omic: [mixRNA,RNA,scRNA]
+  omic: [mixRNA,RNA]
 
 
 # Toastnbfs :  #must be a unique ID without _

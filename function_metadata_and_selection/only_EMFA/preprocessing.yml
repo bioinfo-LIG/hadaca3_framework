@@ -6,7 +6,7 @@ ppID :  #must be a unique ID
 LogNorm : #is working
   path: function_blocks/preprocessing/LogNorm.R
   short_name: LogN
-  omic: [ANY]
+  omic: [mixRNA,RNA,mixMET,MET]
 
 ##### working
 # CPM : # Sequence depth normalization for RNA
@@ -17,7 +17,7 @@ LogNorm : #is working
 Scale :  #scale with sweep function  #must be a unique ID
   path: function_blocks/preprocessing/scale.R
   short_name: scal
-  omic: [ANY]
+  omic: [mixRNA,RNA,mixMET,MET]
 
 
 # scScale :  #must be a unique ID
