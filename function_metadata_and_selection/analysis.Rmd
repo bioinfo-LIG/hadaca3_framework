@@ -75,20 +75,20 @@ totals_setup <- data %>%
 ## With linear scale. 
 
 ```{r linear_setup_number}
-ggplot(data, aes(x = setup, y = count, fill = job)) +
-  geom_col() +
-  labs(title = "Job Counts by Setup",
-       x = "Setup", y = "Total Count") +
-  # scale_y_log10() + 
-  geom_text(
-    data = totals_setup,
-    aes(x = setup, y = total, label = total),
-    inherit.aes = FALSE,         
-    vjust = -0.25,
-    fontface = "bold"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# ggplot(data, aes(x = setup, y = count, fill = job)) +
+#   geom_col() +
+#   labs(title = "Job Counts by Setup",
+#        x = "Setup", y = "Total Count") +
+#   # scale_y_log10() + 
+#   geom_text(
+#     data = totals_setup,
+#     aes(x = setup, y = total, label = total),
+#     inherit.aes = FALSE,         
+#     vjust = -0.25,
+#     fontface = "bold"
+#   ) +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 
@@ -113,7 +113,7 @@ ggplot(data, aes(x = setup, y = count, fill = job)) +
 
 ## log scale v2
 
-```{r}
+```{r job_countv2}
 library(tidytext) 
 data2 <- data %>%
   group_by(setup) %>%
@@ -139,12 +139,12 @@ ggplot(data2, aes(x = job_ordered, y = count, fill = job)) +
     axis.ticks.x = element_blank(),
 
     # Zoom axis labels
-    axis.title.x = element_text(size = 20, face = "bold"),
-    axis.title.y = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(size = 30, face = "bold"),
+    axis.title.y = element_text(size = 30, face = "bold"),
     # axis.text.x = element_text(angle = 45, hjust = 1),
 
-    plot.title = element_text(face = "bold", size = 24),
-    plot.subtitle = element_text(size = 18),
+    plot.title = element_text(face = "bold", size = 50),
+    plot.subtitle = element_text(size = 30),
     legend.position = "right"
   )
   # Save the last plot
@@ -190,38 +190,38 @@ parsed_data <- data.frame(
 ```
 
 
-```{r}
-library(dplyr)
-library(ggplot2)
-library(scales)
+```{r,eval = FALSE}
+# library(dplyr)
+# library(ggplot2)
+# library(scales)
 
-data2 <- data %>%
-  group_by(job) %>%
-  summarise(total = sum(count), .groups = "drop") %>%
-  arrange(total) %>%
-  mutate(job = factor(job, levels = job)) %>%
-  right_join(data, by = "job")
+# data2 <- data %>%
+#   group_by(job) %>%
+#   summarise(total = sum(count), .groups = "drop") %>%
+#   arrange(total) %>%
+#   mutate(job = factor(job, levels = job)) %>%
+#   right_join(data, by = "job")
 
-ggplot(data2, aes(x = job, y = count, fill = job)) +
-  geom_col() +
-  scale_y_log10(labels = comma) +      # <-- only one function with log scale
-  scale_fill_brewer(palette = "Paired", name = "Job type") +
-  facet_wrap(~ setup, nrow = 1, scales = "free_x") +
-  labs(
-    title = "Job Counts by Setup",
-    x = "Job type",
-    y = "Count (log scale)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_blank(),      # hide job labels
-    axis.ticks.x = element_blank(),
-    axis.title.x = element_text(size = 20, face = "bold"),
-    axis.title.y = element_text(size = 20, face = "bold"),
-    plot.title = element_text(face = "bold", size = 24),
-    plot.subtitle = element_text(size = 18),
-    legend.position = "right"
-  )
+# ggplot(data2, aes(x = job, y = count, fill = job)) +
+#   geom_col() +
+#   scale_y_log10(labels = comma) +      # <-- only one function with log scale
+#   scale_fill_brewer(palette = "Paired", name = "Job type") +
+#   facet_wrap(~ setup, nrow = 1, scales = "free_x") +
+#   labs(
+#     title = "Job Counts by Setup",
+#     x = "Job type",
+#     y = "Count (log scale)"
+#   ) +
+#   theme_minimal(base_size = 12) +
+#   theme(
+#     axis.text.x = element_blank(),      # hide job labels
+#     axis.ticks.x = element_blank(),
+#     axis.title.x = element_text(size = 20, face = "bold"),
+#     axis.title.y = element_text(size = 20, face = "bold"),
+#     plot.title = element_text(face = "bold", size = 24),
+#     plot.subtitle = element_text(size = 18),
+#     legend.position = "right"
+#   )
 ```
 
 ## plot Time 
@@ -264,39 +264,39 @@ plot_df <- plot_df %>%
 ```
 
 
-```{r plot_time}
-ggplot(plot_df,
-       aes(x = factor(label, levels = axis_labs$label),
-           y = time,
-           colour = workflow,
-           group  = workflow)) +
-  geom_line(size = 2) +
-  geom_point(size = 4) +
-  geom_text_repel(aes(label = time_hms),
-                  nudge_y  = 0.1,     
-                  nudge_x = - 0.1   , 
-                  min.segment.length = 0,  
-                  size = 3,
-                  box.padding = 0.4,
-                  max.overlaps = Inf) +
-  scale_y_log10(labels = scales::comma) +
-  labs(title   = "Execution Time by Workflow and Setup",
-       x       = "Setup (total jobs)",
-       y       = "Time (seconds, log scale)",
-       colour  = "Workflow") +
+```{r plot_time,eval = FALSE}
+# ggplot(plot_df,
+#        aes(x = factor(label, levels = axis_labs$label),
+#            y = time,
+#            colour = workflow,
+#            group  = workflow)) +
+#   geom_line(size = 2) +
+#   geom_point(size = 4) +
+#   geom_text_repel(aes(label = time_hms),
+#                   nudge_y  = 0.1,     
+#                   nudge_x = - 0.1   , 
+#                   min.segment.length = 0,  
+#                   size = 3,
+#                   box.padding = 0.4,
+#                   max.overlaps = Inf) +
+#   scale_y_log10(labels = scales::comma) +
+#   labs(title   = "Execution Time by Workflow and Setup",
+#        x       = "Setup (total jobs)",
+#        y       = "Time (seconds, log scale)",
+#        colour  = "Workflow") +
 
-  theme_minimal(base_size = 12) +
-  theme(
+#   theme_minimal(base_size = 12) +
+#   theme(
 
-    # Zoom axis labels
-    axis.title.x = element_text(size = 20, face = "bold"),
-    axis.title.y = element_text(size = 20, face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1),
+#     # Zoom axis labels
+#     axis.title.x = element_text(size = 20, face = "bold"),
+#     axis.title.y = element_text(size = 20, face = "bold"),
+#     axis.text.x = element_text(angle = 45, hjust = 1),
 
-    plot.title = element_text(face = "bold", size = 24),
-    plot.subtitle = element_text(size = 18),
-    legend.position = "right"
-  )
+#     plot.title = element_text(face = "bold", size = 24),
+#     plot.subtitle = element_text(size = 18),
+#     legend.position = "right"
+  # )
   # ggsave(
   # filename = "jobs_time.pdf",  # file name
   # plot = last_plot(),                    # current plot
@@ -308,7 +308,7 @@ ggplot(plot_df,
 ```
 
 ## plot time V2
-```{r}
+```{r plot_time_V2}
 
 ggplot(plot_df,
        aes(x = factor(label, levels = axis_labs$label),
@@ -325,7 +325,7 @@ ggplot(plot_df,
                   nudge_y  = 0.05,     
                   nudge_x = 0, 
                   min.segment.length = 0,  
-                  size = 3.5,
+                  size = 6,
                   box.padding = 0.5,
                   max.overlaps = Inf) +
 
@@ -346,15 +346,15 @@ ggplot(plot_df,
   # Theme
   theme_minimal(base_size = 14) +
   theme(
-    axis.title.x = element_text(size = 18, face = "bold"),
-    axis.title.y = element_text(size = 18, face = "bold"),
+    axis.title.x = element_text(size = 30, face = "bold"),
+    axis.title.y = element_text(size = 30, face = "bold"),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
-    axis.text.y = element_text(size = 12),
-    plot.title = element_text(face = "bold", size = 22),
-    plot.subtitle = element_text(size = 16),
+    axis.text.y = element_text(size = 30),
+    plot.title = element_text(face = "bold", size = 50),
+    plot.subtitle = element_text(size = 30),
     legend.position = "right",
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 30, face = "bold"),
+    legend.text = element_text(size = 30),
     panel.grid.major = element_line(color = "gray90")
   )
     ggsave(

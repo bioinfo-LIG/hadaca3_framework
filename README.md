@@ -71,7 +71,9 @@ conda install -y -c bioconda -c conda-forge -c r \
     bioconductor-OmnipathR r-EPIC r-furrr \
     bioconda::r-mixkernel bioconda::bioconductor-mofa2 \
     bioconductor-omicade4 bioconda::mofapy2 \
-    r-caret r-factominer scanpy=1.11 numpy=1.26.4
+    r-caret r-factominer scanpy=1.11 numpy=1.26.4 
+    # bioconda::bioconductor-qsmooth r-tidyverse 
+
 
 pip install uniport
 Rscript -e 'install.packages("FARDEEP", repos = "http://cran.us.r-project.org", dependencies = TRUE, INSTALL_opts = "--no-lock")'
@@ -80,6 +82,7 @@ Rscript -e 'remotes::install_github("Danko-Lab/BayesPrism/BayesPrism")'
 Rscript -e 'remotes::install_github("humengying0907/InstaPrism")'
 Rscript -e 'remotes::install_github("xuranw/MuSiC", dependencies = TRUE,INSTALL_opts = "--no-lock")'
 
+# Rscript -e 'remotes::install_github("manqicai/EMixed")'
 ```
 
 ### 3. Download the data

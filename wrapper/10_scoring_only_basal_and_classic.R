@@ -551,8 +551,9 @@ final_output <- future_lapply(all_datasets, function(ds) {
   a_real  <- read_hdf5(gt_path)$groundtruth
   a_real = as.matrix(a_real)
 
-  a_real_sub <- a_real[target_types, , drop = FALSE]
-
+  # a_real_sub <- a_real[target_types, , drop = FALSE]
+  present_in_real <- intersect(target_types, rownames(a_real))
+  a_real_sub <- a_real[present_in_real, , drop = FALSE]
 
   # B. Get all prediction paths associated with this dataset
   late_subset <- late_int[dataset == ds]
@@ -574,7 +575,7 @@ final_results_df <- rbindlist(final_output)
 
 
 datasets_string <- paste(all_datasets, collapse = "_")
-file_name <- paste0("results_li_basal_classic_", datasets_string, ".csv.gz")
+file_name <- paste0("results_v2_li_basal_classic_", datasets_string, ".csv.gz")
 
 # file_name = "results_li_basal_classic" +  all_datasets +  ".csv.gz"
 fwrite(final_results_df, file = file_name, compress = "gzip")
@@ -591,7 +592,9 @@ final_output_ei <- future_lapply(all_datasets, function(ds) {
   a_real = as.matrix(a_real)
 
 
-  a_real_sub <- a_real[target_types, , drop = FALSE]
+  # a_real_sub <- a_real[target_types, , drop = FALSE]
+  present_in_real <- intersect(target_types, rownames(a_real))
+  a_real_sub <- a_real[present_in_real, , drop = FALSE]
 
   # B. Get all prediction paths associated with this dataset
   early_subset <- early_int[dataset == ds]
@@ -612,7 +615,7 @@ final_output_ei <- future_lapply(all_datasets, function(ds) {
 final_results_df_ei <- rbindlist(final_output_ei)
 
 datasets_string <- paste(all_datasets, collapse = "_")
-file_name_ei <- paste0("results_ei_basal_classic_", datasets_string, ".csv.gz")
+file_name_ei <- paste0("results_v2_ei_basal_classic_", datasets_string, ".csv.gz")
 
 # file_name_ei = "results_li_basal_classic" +  all_datasets +  ".csv.gz"
 fwrite(final_results_df_ei, file = file_name_ei, compress = "gzip")

@@ -18,10 +18,10 @@ invitro1 :
 # #   groundtruth_file_path : data/groundtruth2_invivo_pdac.h5
 # #   path : data/mixes2_invivo_pdac.h5
 
-insilicopseudobulk1 : 
-  short_name : SBN5
-  groundtruth_file_path : data/groundtruth1_insilicopseudobulk_pdac.h5
-  path : data/mixes1_insilicopseudobulk_pdac.h5
+# insilicopseudobulk1 : 
+#   short_name : SBN5
+#   groundtruth_file_path : data/groundtruth1_insilicopseudobulk_pdac.h5
+#   path : data/mixes1_insilicopseudobulk_pdac.h5
 
 # # insilicopseudobulk2 : 
 # #   short_name : SBN5
@@ -49,7 +49,30 @@ insilicopseudobulk1 :
 #   path : data/mixes2_insilicodirichletCopule_pdac.h5 
 
 
-# insilicodirichletNoDep4CTsource1 : 
+insilicodirichletNoDep6CTsource1 : 
+  short_name : SDN6
+  groundtruth_file_path : data/groundtruth1_insilicodirichletNoDep6CTsource_pdac.h5
+  path : data/mixes1_insilicodirichletNoDep6CTsource_pdac.h5 
+
+# insilicodirichletNoDep6CTsource2 : 
+#   short_name : SDN6 
+#   groundtruth_file_path : data/groundtruth2_insilicodirichletNoDep6CTsource_pdac.h5
+#   path : data/mixes2_insilicodirichletNoDep6CTsource_pdac.h5 
+
+
+
+insilicodirichletNoDep4CTsource1 : 
+  short_name : SDN4
+  groundtruth_file_path : data/groundtruth1_insilicodirichletNoDep4CTsource_pdac.h5
+  path : data/mixes1_insilicodirichletNoDep4CTsource_pdac.h5 
+
+# insilicodirichletNoDep4CTsource2 : 
 #   short_name : SDN4
-#   groundtruth_file_path : data/groundtruth1_insilicodirichletNoDep4CTsource_pdac.h5
-#   path : data/mixes1_insilicodirichletNoDep4CTsource_pdac.h5 
+#   groundtruth_file_path : data/groundtruth2_insilicodirichletNoDep4CTsource_pdac.h5
+#   path : data/mixes2_insilicodirichletNoDep4CTsource_pdac.h5 
+
+
+insilicodirichletNoDep1 : 
+  short_name : SDN5
+  groundtruth_file_path : data/groundtruth1_insilicodirichletNoDep_pdac.h5
+  path : data/mixes1_insilicodirichletNoDep_pdac.h5 

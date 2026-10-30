@@ -14,7 +14,7 @@ Folder contents:
 /!\ Change branch to `smk_nf_used_for_benchmark`
 
 ```
-cd benchmark
+cd function_metadata_and_selection
 conda activate hadaca3framework_env
 python benchmark.py
 ```
@@ -22,7 +22,7 @@ python benchmark.py
 ## Run the analysis: 
 
 ```
-cd benchmark
+cd function_metadata_and_selection
 conda activate hadaca3framework_env
 Rscript -e "rmarkdown::render('analysis.Rmd')"
 ```
