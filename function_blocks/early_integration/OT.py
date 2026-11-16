@@ -1,81 +1,82 @@
+# uniPort early integration (block version 1.0, 2026-11-13).
+#
+# Diagonal integration with uniPort (Cao et al., Nat Commun 2022): one variational encoder per omic (RNA, DNAm),
+# the two latent spaces aligned by unbalanced optimal transport (uniPort mode 'd'). Each sample - a mixture or a
+# reference cell type - has an RNA and a DNAm encoding: its latent profile is the mean of the two (the samples are
+# paired across the omics). As for MCIA and MKL, the latent coordinates are shifted to be non-negative (minus the
+# global minimum), and the latent profiles of the mixtures and of the reference cell types form the integrated unit
+# that is passed to the deconvolution.
+#
+# This block replaces function_blocks/early_integration/OT.py (block "OT"), which ran uniPort in mode 'v' and returned
+# adata.X, i.e. the normalised RNA data: its latent space was never read, the DNAm did not enter the prediction, and
+# mode 'v' has no optimal-transport term. The block "OT" is kept, unchanged and annotated, for the record only.
+#
+# Data preparation: as in the block "OT" (per omic: normalize_total, log1p, division by the global maximum; samples
+# with an all-zero profile in either omic removed). Settings: 500 iterations, batch size min(50, number of samples),
+# 16 latent dimensions (uniPort default), random seed 124 (uniPort default, set explicitly here), 2 torch threads.
+#
+# Reproducibility: with the same seed, the result depends on the number of torch threads (and may depend on the
+# platform and on the versions of torch / BLAS): on three configurations, 1 thread instead of 2 changed the
+# integration by up to 0.45 and the aggregated scores by -0.11 to +0.03 (one pipeline from 0.53 to 0). The number of
+# threads is therefore fixed here (THREADS), not left to the environment. Results are reproducible for a given
+# platform and software versions; across platforms, expect run-to-run variation of this order.
+#
+# Software used for the first run: uniport 1.3, torch 2.14.1 (CPU), scanpy (see the MANIFEST of the run).
 
-import uniport as up
-import scanpy as sc
-import pandas as pd
+import os
+import tempfile
 import numpy as np
-from scipy.sparse import csr_matrix
+import pandas as pd
+import scanpy as sc
+import torch
+import uniport as up
+
+BLOCK_VERSION = "1.0"
+SEED = 124
+ITERATIONS = 500
+THREADS = 2  # the result depends on it (see above)
 
 
-def program_block_EI(rna_unit,met_unit,path_og_dataset=""):
+def program_block_EI(rna_unit, met_unit, path_og_dataset=""):
+    torch.set_num_threads(THREADS)
 
-    # Align by shared genes
+    # ---- data preparation (as in the block "OT") ----
     common_genes = rna_unit["mix"].index.intersection(rna_unit["ref"].index)
-    rna_unit["mix"] = rna_unit["mix"].loc[common_genes]
-    rna_unit["ref"] = rna_unit["ref"].loc[common_genes]
+    rna_mix, rna_ref = rna_unit["mix"].loc[common_genes], rna_unit["ref"].loc[common_genes]
+    common_met = met_unit["mix"].index.intersection(met_unit["ref"].index)
+    met_mix, met_ref = met_unit["mix"].loc[common_met], met_unit["ref"].loc[common_met]
+    if list(rna_mix.columns) != list(met_mix.columns):
+        met_mix = met_mix[rna_mix.columns]  # same mixture samples, same order
+    met_ref = met_ref[rna_ref.columns]      # same cell types, same order
 
-    # Rebuild combined dataset
-    data_rna_DT = pd.concat([rna_unit["mix"], rna_unit["ref"]], axis=1)
-    data_rna_D = rna_unit["mix"]
+    n_sample, n_ref = rna_mix.shape[1], rna_ref.shape[1]
+    types = ["sample"] * n_sample + ["ref"] * n_ref
 
-    # Do the same for MET if needed
-    common_genes_met = met_unit["mix"].index.intersection(met_unit["ref"].index)
-    met_unit["mix"] = met_unit["mix"].loc[common_genes_met]
-    met_unit["ref"] = met_unit["ref"].loc[common_genes_met]
-    data_met_DT = pd.concat([met_unit["mix"], met_unit["ref"]], axis=1)
+    def make_adata(mix, ref, source, domain):
+        a = sc.AnnData(pd.concat([mix, ref], axis=1).T.astype(np.float32))
+        a.obs["source"] = source
+        a.obs["type"] = types
+        a.obs["domain_id"] = domain
+        sc.pp.normalize_total(a)
+        sc.pp.log1p(a)
+        a.X = a.X / a.X.max()
+        a.X = np.nan_to_num(a.X)
+        return a
 
-    # Make anndata
-    n_sample = data_rna_D.shape[1]
-    n_ref = data_rna_DT.shape[1] - n_sample
-    adata_rna_DT = sc.AnnData(data_rna_DT.T, dtype=np.float32)
-    adata_met_DT = sc.AnnData(data_met_DT.T, dtype=np.float32)
-    adata_rna_DT.obs['source'] = 'RNA'
-    adata_rna_DT.obs['type'] = ['sample']*n_sample + ['ref']*n_ref
-    adata_met_DT.obs['source'] = 'MET'
-    adata_met_DT.obs['type'] = ['sample']*n_sample + ['ref']*n_ref
+    ad_rna = make_adata(rna_mix, rna_ref, "RNA", 0)
+    ad_met = make_adata(met_mix, met_ref, "MET", 1)
+    keep = (np.asarray(ad_rna.X.sum(axis=1)).ravel() > 0) & (np.asarray(ad_met.X.sum(axis=1)).ravel() > 0)
+    ad_rna, ad_met = ad_rna[keep].copy(), ad_met[keep].copy()
+    if ad_rna.n_obs == 0:
+        raise ValueError("no valid sample after filtering")
 
+    # ---- integration: uniPort mode 'd' (one encoder per omic, latent spaces aligned by unbalanced OT) ----
+    outdir = tempfile.mkdtemp(prefix="uniport_")  # own checkpoint folder (runs in parallel)
+    up.Run(adatas=[ad_rna, ad_met], mode="d", iteration=ITERATIONS, batch_size=min(50, ad_rna.n_obs),
+           outdir=outdir, seed=SEED)
+    latent = (np.asarray(ad_rna.obsm["latent"]) + np.asarray(ad_met.obsm["latent"])) / 2
+    latent = latent - latent.min()
 
-    # # Select 2k HVG in each
-    sc.pp.normalize_total(adata_rna_DT)
-    sc.pp.log1p(adata_rna_DT)
-
-    sc.pp.normalize_total(adata_met_DT)
-    sc.pp.log1p(adata_met_DT)
-    adata_rna_DT.X = adata_rna_DT.X/adata_rna_DT.X.max()
-    adata_met_DT.X = adata_met_DT.X/adata_met_DT.X.max()
-
-
-    # --- Safety checks ---
-    adata_rna_DT.X = np.nan_to_num(adata_rna_DT.X)
-    adata_met_DT.X = np.nan_to_num(adata_met_DT.X)
-
-    adata_rna_DT = adata_rna_DT[adata_rna_DT.X.sum(axis=1) > 0]
-    adata_met_DT = adata_met_DT[adata_met_DT.X.sum(axis=1) > 0]
-
-    if adata_rna_DT.n_obs == 0 or adata_met_DT.n_obs == 0:
-        raise ValueError("One of the datasets has no valid samples after filtering.")
-
-
-    batch_size = min(50, adata_rna_DT.n_obs, adata_met_DT.n_obs)
-    # OT MET->RNA
-    adata_rna_DT_OT = adata_rna_DT
-    print("Analyzing dataset")
-    adata_rna_DT_OT = up.Run(adatas=[adata_rna_DT, adata_met_DT], mode='v', iteration=500, batch_size=batch_size)
-
-    # # OT RNA->MET
-    adata_mix = adata_rna_DT_OT[adata_rna_DT_OT.obs['type'] == 'sample']
-    adata_ref = adata_rna_DT_OT[adata_rna_DT_OT.obs['type'] == 'ref']
-
-    # Convert each subset to a pandas DataFrame
-    def adata_to_df(adata):
-        """Convert AnnData object to dense pandas DataFrame"""
-        X = adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X
-        return pd.DataFrame(X, index=adata.obs_names, columns=adata.var_names)
-
-    # Create the dictionary
-    unit = {
-        "mix": adata_to_df(adata_mix).T,
-        "ref": adata_to_df(adata_ref).T,
-        "ref_scRNA" : rna_unit["ref_scRNA"]
-    }
-
-    return unit
+    z = pd.DataFrame(latent.T, index=["L%d" % (i + 1) for i in range(latent.shape[1])], columns=ad_rna.obs_names)
+    is_ref = (ad_rna.obs["type"] == "ref").values
+    return {"mix": z.loc[:, ~is_ref], "ref": z.loc[:, is_ref], "ref_scRNA": rna_unit["ref_scRNA"]}
