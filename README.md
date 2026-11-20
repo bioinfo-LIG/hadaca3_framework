@@ -4,45 +4,37 @@
 
 ![HADACA3 Benchmark](img/figure_benchmark.png)
 
-This repository contains the benchmarking framework used in the **HADACA3 benchmark** study:
+This repository holds the framework of the HADACA3 benchmark, described in:
 
-> *On the Promises and Limits of Multimodal Integration for Deconvolution: The HADACA3 Benchmark* 
+> *[On the Promises and Limits of Multimodal Integration for Deconvolution: The HADACA3 Benchmark](https://arxiv.org/abs/2606.05980)* 
 
-> ⚠️ **This paper is currently under anonymous review. The preprint and full citation will be made available upon completion of the review process.**
 
 ---
 
 ## Overview
 
-HADACA3 is a community-driven benchmark evaluating **multi-omic integration strategies for bulk tissue deconvolution**. Given bulk RNA-seq and DNA methylation (DNAm) profiles of tumor samples, the task is to estimate the relative proportions of cell types present in the mixture.
+The framework estimates cell-type proportions of pancreatic tumour samples from bulk RNA-seq and DNA methylation
+(DNAm). It builds every compatible pipeline from interchangeable blocks: pre-processing, feature selection,
+deconvolution, and integration of the two omics. It runs the pipelines on 9 datasets (in silico, in vitro, in vivo)
+and scores them with 12 metrics.
 
-This framework provides a **modular Nextflow pipeline** that systematically evaluates all compatible combinations of:
+**Using it for the article:**
+- [PAPER.md](PAPER.md) gives the names used in the article for the blocks and the datasets, and the part of the
+  framework that the article analyses.
+- The article analyses 18,774 pipelines in 9 datasets. The framework can run more than 250,000 combinations.
 
-- **Preprocessing** methods 
-- **Feature selection** methods 
-- **Deconvolution** algorithms 
-- **Multi-omics integration** strategies 
-
-Over **250,000 pipeline combinations** were evaluated across **9 benchmark datasets** spanning *in silico*, *in vitro*, and *in vivo* settings.
 
 ---
 
 ## Repository Structure
 
-```
-hadaca3_framework/
-├── .github/workflows/              # CI/CD configuration (GitHub Actions)
-├── 00_paper_reproducibility/       # Code to reproduce all paper results and figures
-├── function_blocks/                # Implementation of all pipeline module functions (R/Python)
-├── function_metadata_and_selection/# YAML declarations and method selection logic
-├── scripts_bash/                   # Bash scripts for job submission and pipeline execution
-├── utils/                          # Shared utilities (HDF5 I/O, scoring, data processing)
-├── wrapper/                        # Nextflow process wrappers
-├── 00_run_pipeline.nf              # Main Nextflow pipeline entry point
-├── nextflow.config                 # Nextflow configuration (CPU limits, parallelism)
-├── index.html                      # Pipeline results viewer
-├── .gitignore
-└── LICENSE                         # GPL-3.0
+## Data and results
+
+| what | where |
+|---|---|
+| input datasets (`.h5`) | Zenodo record [19677979](https://zenodo.org/records/19677979) |
+| raw result tables of the benchmark | Zenodo record [19677979](https://zenodo.org/records/19677979) |
+| tables, source data and figure scripts of the article | Zenodo record [19677979](https://zenodo.org/records/19677979) |
 ```
 
 ---
@@ -51,11 +43,10 @@ hadaca3_framework/
 
 ### 1. Clone the repository
 
-```bash
-# Repository URL will be provided upon completion of the review process.
-git clone <repository_url>
-cd hadaca3_framework
-```
+   ```sh
+   git clone https://github.com/bioinfo-LIG/hadaca3_framework.git
+   cd hadaca3_framework
+   ```
 
 ### 2. Set up the environment
 
