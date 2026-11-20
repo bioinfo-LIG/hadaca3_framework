@@ -35,7 +35,6 @@ and scores them with 12 metrics.
 | input datasets (`.h5`) | Zenodo record [19677979](https://zenodo.org/records/19677979) |
 | raw result tables of the benchmark | Zenodo record [19677979](https://zenodo.org/records/19677979) |
 | tables, source data and figure scripts of the article | Zenodo record [19677979](https://zenodo.org/records/19677979) |
-```
 
 ---
 
@@ -43,10 +42,10 @@ and scores them with 12 metrics.
 
 ### 1. Clone the repository
 
-   ```sh
-   git clone https://github.com/bioinfo-LIG/hadaca3_framework.git
-   cd hadaca3_framework
-   ```
+```bash
+git clone https://github.com/bioinfo-LIG/hadaca3_framework.git
+cd hadaca3_framework
+ ```
 
 ### 2. Set up the environment
 
@@ -78,9 +77,8 @@ Rscript -e 'remotes::install_github("xuranw/MuSiC", dependencies = TRUE,INSTALL_
 
 ### 3. Download the data
 
-> ⚠️ **The datasets are archived on Zenodo. The DOI and download URL will be provided upon completion of the review process.**
-
-Once available, download and place the `.h5` files in the `data/` folder:
+Zenodo record [19677979](https://zenodo.org/records/19677979)
+Download and place the `.h5` files in the `data/` folder:
 
 ```bash
 mkdir -p ~/projects/hadaca3_framework/data
@@ -258,17 +256,10 @@ The incremental CI pipeline resumes execution by reading the selected functions 
 ## License
 
 This project is licensed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE) for details.
-
----
-
-## Citation
-
-> ⚠️ Citation information will be provided upon completion of the review process.
-
 ---
 
 ## Contributing
 
 Contributions are welcome! To add a new deconvolution method, integration strategy, or feature selection approach, please follow the instructions in the [Adding a New Method](#adding-a-new-method) section and open a pull request.
 
-For bug reports or feature requests, please open an issue on the repository (link available after review).
+For bug reports or feature requests, please open an issue on the repository.
