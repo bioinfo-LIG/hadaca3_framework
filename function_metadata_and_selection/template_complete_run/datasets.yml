@@ -76,3 +76,16 @@ insilicodirichletNoDep1 :
   short_name : SDN5
   groundtruth_file_path : data/groundtruth1_insilicodirichletNoDep_pdac.h5
   path : data/mixes1_insilicodirichletNoDep_pdac.h5 
+
+
+
+
+insilicodirichletEMFAImmuneLowProp1 : 
+  short_name : SDEL1
+  groundtruth_file_path : data/groundtruth1_insilicodirichletEMFAImmuneLowProp_pdac.h5
+  path : data/mixes1_insilicodirichletEMFAImmuneLowProp_pdac.h5 
+
+# insilicodirichletEMFAImmuneLowProp2 : 
+#   short_name : SDEL2
+#   groundtruth_file_path : data/groundtruth2_insilicodirichletEMFAImmuneLowProp_pdac.h5
+#   path : data/mixes2_insilicodirichletEMFAImmuneLowProp_pdac.h5 
